@@ -24,7 +24,7 @@ export const SUPPORTED_LOCALES = [
 ]
 
 const RTL_LOCALES = new Set(['ar'])
-const STORAGE_KEY = 'prospectclaw-locale'
+const STORAGE_KEY = 'privix-community-locale'
 const DEFAULT_LOCALE = 'zh-CN'
 
 // ── 内部状态 ──────────────────────────────────────

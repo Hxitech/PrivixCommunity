@@ -176,7 +176,7 @@ async function webInvoke(cmd, args) {
   clearTimeout(timeout)
   if (resp.status === 401) {
     // Tauri 模式下不触发登录浮层（Tauri 有自己的认证流程）
-    if (!isTauri && window.__prospectclaw_show_login) window.__prospectclaw_show_login()
+    if (!isTauri && window.__privix_community_show_login) window.__privix_community_show_login()
     throw new Error('需要登录')
   }
   // 检测后端是否可用：如果返回的是 HTML（非 JSON），说明后端未运行
@@ -197,7 +197,7 @@ async function webUpload(cmd, formData) {
     body: formData,
   })
   if (resp.status === 401) {
-    if (!isTauri && window.__prospectclaw_show_login) window.__prospectclaw_show_login()
+    if (!isTauri && window.__privix_community_show_login) window.__privix_community_show_login()
     throw new Error('需要登录')
   }
   if (!resp.ok) {
@@ -321,7 +321,7 @@ export const api = {
   saveAgentBinding: (agentId, channel, accountId = null, bindingConfig = {}) => { invalidate('list_all_bindings', 'read_openclaw_config'); return invoke('save_agent_binding', { agentId, channel, accountId, bindingConfig }) },
   deleteAgentBinding: (agentId, channel, accountId = null) => { invalidate('list_all_bindings', 'read_openclaw_config'); return invoke('delete_agent_binding', { agentId, channel, accountId }) },
 
-  // 面板配置 (prospectclaw panel config)
+  // 面板配置 (panel config)
   readPanelConfig: () => invoke('read_panel_config'),
   writePanelConfig: (config) => invoke('write_panel_config', { config }),
   readSwarmSessions: () => invoke('read_swarm_sessions'),

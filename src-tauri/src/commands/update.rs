@@ -4,7 +4,7 @@ use std::fs;
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
-/// 前端热更新目录 (~/.openclaw/prospectclaw/<profileId>/web-update/)
+/// 前端热更新目录 (~/.openclaw/privix-community/web-update/)
 pub fn update_dir() -> PathBuf {
     super::panel_runtime_dir().join("web-update")
 }

@@ -7,9 +7,9 @@ import {
 const ACTIVE_PRODUCT_PROFILE_ID = getActiveProductProfileId()
 
 const STORAGE_BASE_KEYS = Object.freeze({
-  config: 'prospectclaw-assistant',
-  sessions: 'prospectclaw-assistant-sessions',
-  guide: 'prospectclaw-guide-assistant-dismissed',
+  config: 'privix-community-assistant',
+  sessions: 'privix-community-assistant-sessions',
+  guide: 'privix-community-guide-assistant-dismissed',
 })
 
 const LEGACY_STORAGE_BASE_KEYS = Object.freeze({

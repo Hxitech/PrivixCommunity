@@ -3469,7 +3469,9 @@ pub async fn check_panel_update() -> Result<Value, String> {
                 result.insert("source".into(), Value::String(source.to_string()));
                 result.insert(
                     "downloadUrl".into(),
-                    Value::String("https://www.privix.cn".into()),
+                    Value::String(
+                        "https://github.com/privix-community/privix/releases".into(),
+                    ),
                 );
                 return Ok(Value::Object(result));
             }

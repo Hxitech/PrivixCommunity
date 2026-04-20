@@ -523,7 +523,7 @@ export class WsClient {
    * 基于 agentId + profileId 生成稳定 key，不随连接变化
    */
   static generateSessionKey(agentId = 'main', profileId = 'default') {
-    const input = `${agentId}:${profileId}:prospectclaw`
+    const input = `${agentId}:${profileId}:privix-community`
     let hash = 0
     for (let i = 0; i < input.length; i++) {
       hash = ((hash << 5) - hash + input.charCodeAt(i)) | 0

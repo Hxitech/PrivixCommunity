@@ -14,12 +14,12 @@ NPM_REGISTRY="https://registry.npmmirror.com"
 # 检测权限模式
 if [ "$(id -u)" = "0" ]; then
     IS_ROOT=true
-    INSTALL_DIR="/opt/prospectclaw"
+    INSTALL_DIR="/opt/privix-community"
     SYSTEMD_DIR="/etc/systemd/system"
     echo "🔑 以 root 身份运行，安装到 $INSTALL_DIR"
 else
     IS_ROOT=false
-    INSTALL_DIR="$HOME/.local/share/prospectclaw"
+    INSTALL_DIR="$HOME/.local/share/privix-community"
     SYSTEMD_DIR="$HOME/.config/systemd/user"
     echo "👤 以普通用户身份运行，安装到 $INSTALL_DIR"
 fi
@@ -152,7 +152,7 @@ install_openclaw() {
 }
 
 # 克隆并安装 Privix
-install_prospectclaw() {
+install_privix_community() {
     if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/package.json" ]; then
         echo "📦 Privix 已存在，更新中..."
         cd "$INSTALL_DIR"
@@ -185,7 +185,7 @@ setup_systemd() {
     mkdir -p "$SYSTEMD_DIR"
 
     if [ "$IS_ROOT" = true ]; then
-        cat > "$SYSTEMD_DIR/prospectclaw.service" << EOF
+        cat > "$SYSTEMD_DIR/privix-community.service" << EOF
 [Unit]
 Description=Privix Web - OpenClaw Management Panel
 After=network.target
@@ -204,10 +204,10 @@ Environment=HOME=$HOME
 WantedBy=multi-user.target
 EOF
         systemctl daemon-reload
-        systemctl enable prospectclaw
-        systemctl start prospectclaw
+        systemctl enable privix-community
+        systemctl start privix-community
     else
-        cat > "$SYSTEMD_DIR/prospectclaw.service" << EOF
+        cat > "$SYSTEMD_DIR/privix-community.service" << EOF
 [Unit]
 Description=Privix Web - OpenClaw Management Panel
 After=network.target
@@ -225,8 +225,8 @@ Environment=HOME=$HOME
 WantedBy=default.target
 EOF
         systemctl --user daemon-reload
-        systemctl --user enable prospectclaw
-        systemctl --user start prospectclaw
+        systemctl --user enable privix-community
+        systemctl --user start privix-community
         # 允许用户服务在未登录时继续运行
         loginctl enable-linger "$(whoami)" 2>/dev/null || true
     fi
@@ -273,7 +273,7 @@ main() {
     install_git
     install_node
     install_openclaw
-    install_prospectclaw
+    install_privix_community
     setup_default_password
     setup_systemd
 
@@ -300,12 +300,12 @@ main() {
     fi
     echo ""
     echo "  常用命令："
-    echo "    $ctl_cmd status prospectclaw    # 查看状态"
-    echo "    $ctl_cmd restart prospectclaw   # 重启面板"
+    echo "    $ctl_cmd status privix-community    # 查看状态"
+    echo "    $ctl_cmd restart privix-community   # 重启面板"
     if [ "$IS_ROOT" = true ]; then
-        echo "    journalctl -u prospectclaw -f    # 查看日志"
+        echo "    journalctl -u privix-community -f    # 查看日志"
     else
-        echo "    journalctl --user -u prospectclaw -f    # 查看日志"
+        echo "    journalctl --user -u privix-community -f    # 查看日志"
     fi
     echo ""
     echo "  用浏览器打开上面的地址，即可管理 OpenClaw。"

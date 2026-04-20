@@ -35,7 +35,7 @@ async function apiCall(cmd, args = {}) {
       delete cfg.mustChangePassword
       delete cfg.ignoreRisk
       await api.writePanelConfig(cfg)
-      sessionStorage.setItem('prospectclaw_authed', '1')
+      sessionStorage.setItem('privix_community_authed', '1')
       return { success: true }
     }
     if (cmd === 'auth_ignore_risk') {
@@ -43,7 +43,7 @@ async function apiCall(cmd, args = {}) {
         delete cfg.accessPassword
         delete cfg.mustChangePassword
         cfg.ignoreRisk = true
-        sessionStorage.removeItem('prospectclaw_authed')
+        sessionStorage.removeItem('privix_community_authed')
         sessionStorage.removeItem('clawpanel_authed')
       } else {
         delete cfg.ignoreRisk
@@ -246,7 +246,7 @@ function bindSecurityEvents(container, status) {
         msgEl.style.color = 'var(--success)'
         toast(t('pages.security.pw_changed'), 'success')
         // 清除默认密码横幅
-        sessionStorage.removeItem('prospectclaw_must_change_pw')
+        sessionStorage.removeItem('privix_community_must_change_pw')
         sessionStorage.removeItem('clawpanel_must_change_pw')
         const banner = document.getElementById('pw-change-banner')
         if (banner) banner.remove()

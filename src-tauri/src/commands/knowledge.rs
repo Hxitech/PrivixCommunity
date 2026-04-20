@@ -2,13 +2,12 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Knowledge base root directory: ~/.openclaw/prospectclaw/local_qa_kb/knowledge/
+/// Knowledge base root directory: ~/.openclaw/privix-community/knowledge/
 fn kb_root_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_default()
         .join(".openclaw")
-        .join("prospectclaw")
-        .join("local_qa_kb")
+        .join("privix-community")
         .join("knowledge")
 }
 

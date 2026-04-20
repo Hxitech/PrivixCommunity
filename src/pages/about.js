@@ -489,7 +489,7 @@ function getProjects() {
     },
     {
       name: 'Privix',
-      desc: t('pages.about.project_prospectclaw_desc'),
+      desc: t('pages.about.project_privix_community_desc'),
       url: COMPANY_WEBSITE,
       actionLabel: t('pages.about.btn_website'),
     },

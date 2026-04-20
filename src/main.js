@@ -55,7 +55,7 @@ async function checkAuth() {
       const { api } = await import('./lib/tauri-api.js')
       const cfg = await api.readPanelConfig()
       if (!cfg.accessPassword) return { ok: true }
-      if (sessionStorage.getItem('prospectclaw_authed') === '1' || sessionStorage.getItem('clawpanel_authed') === '1') return { ok: true }
+      if (sessionStorage.getItem('privix_community_authed') === '1' || sessionStorage.getItem('clawpanel_authed') === '1') return { ok: true }
       // 默认密码：直接传给登录页，避免二次读取
       const defaultPw = (cfg.mustChangePassword && cfg.accessPassword) ? cfg.accessPassword : null
       return { ok: false, defaultPw }
@@ -125,7 +125,7 @@ function _hideSplashWhenReady({ immediate = false, revealApp = false } = {}) {
 }
 
 function mountDefaultPasswordBanner() {
-  const shouldShow = sessionStorage.getItem('prospectclaw_must_change_pw') === '1'
+  const shouldShow = sessionStorage.getItem('privix_community_must_change_pw') === '1'
     || sessionStorage.getItem('clawpanel_must_change_pw') === '1'
   if (!shouldShow || document.getElementById('pw-change-banner')) return
 
@@ -153,7 +153,7 @@ function mountDefaultPasswordBanner() {
   const dismiss = (clearMustChangeFlag = false) => {
     clearTimeout(hideTimer)
     if (clearMustChangeFlag) {
-      sessionStorage.removeItem('prospectclaw_must_change_pw')
+      sessionStorage.removeItem('privix_community_must_change_pw')
       sessionStorage.removeItem('clawpanel_must_change_pw')
     }
     banner.classList.remove('pw-change-banner-visible')
@@ -372,7 +372,7 @@ function showLoginOverlay(defaultPw) {
             btn.textContent = t('main.login_btn')
             return
           }
-          sessionStorage.setItem('prospectclaw_authed', '1')
+          sessionStorage.setItem('privix_community_authed', '1')
           // 同步建立 web session（WEB_ONLY_CMDS 需要 cookie 认证）
           try {
             await fetch('/__api/auth_login', {
@@ -384,7 +384,7 @@ function showLoginOverlay(defaultPw) {
           overlay.classList.add('hide')
           setTimeout(() => overlay.remove(), 400)
           if (cfg.accessPassword === '123456') {
-            sessionStorage.setItem('prospectclaw_must_change_pw', '1')
+            sessionStorage.setItem('privix_community_must_change_pw', '1')
           }
           resolve()
         } else {
@@ -410,7 +410,7 @@ function showLoginOverlay(defaultPw) {
           overlay.classList.add('hide')
           setTimeout(() => overlay.remove(), 400)
           if (data.mustChangePassword || data.defaultPassword === '123456') {
-            sessionStorage.setItem('prospectclaw_must_change_pw', '1')
+            sessionStorage.setItem('privix_community_must_change_pw', '1')
           }
           resolve()
         }
@@ -424,13 +424,13 @@ function showLoginOverlay(defaultPw) {
 }
 
 // 全局 401 拦截：API 返回 401 时弹出登录
-window.__prospectclaw_show_login = async function() {
+window.__privix_community_show_login = async function() {
   if (document.getElementById('login-overlay')) return
   await showLoginOverlay()
   location.reload()
 }
 // Keep old alias for backward compatibility
-window.__clawpanel_show_login = window.__prospectclaw_show_login
+window.__clawpanel_show_login = window.__privix_community_show_login
 
 const sidebar = document.getElementById('sidebar')
 const content = document.getElementById('content')

@@ -133,7 +133,7 @@ fn current_gateway_owner_signature() -> (u16, String, Option<String>) {
 }
 
 fn matches_current_gateway_owner_signature(owner: &GatewayOwnerRecord) -> bool {
-    if owner.started_by != "prospectclaw" {
+    if owner.started_by != "privix-community" {
         return false;
     }
     let (port, openclaw_dir, cli_path) = current_gateway_owner_signature();
@@ -170,7 +170,7 @@ fn write_gateway_owner(pid: Option<u32>) -> Result<(), String> {
         cli_path,
         openclaw_dir,
         started_at: chrono::Local::now().to_rfc3339(),
-        started_by: "prospectclaw".into(),
+        started_by: "privix-community".into(),
     };
     let content = serde_json::to_string_pretty(&record)
         .map_err(|e| format!("序列化 Gateway owner 失败: {e}"))?;

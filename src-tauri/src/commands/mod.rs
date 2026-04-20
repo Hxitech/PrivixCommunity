@@ -58,16 +58,16 @@ fn default_openclaw_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_default().join(".openclaw")
 }
 
-const DEFAULT_PRODUCT_PROFILE_ID: &str = "prospectclaw";
+const DEFAULT_PRODUCT_PROFILE_ID: &str = "privix-community";
 
-/// v1.2.2 起统一为 "prospectclaw"，不再区分 invest_workbench / local_qa_kb / doc_sop。
-/// 保留函数签名以兼容所有调用方。
+/// 社区版唯一 profile id
 pub fn active_product_profile_id() -> &'static str {
     DEFAULT_PRODUCT_PROFILE_ID
 }
 
-/// 旧版 profile ID 列表，用于配置目录回退查找
-const LEGACY_PROFILE_IDS: &[&str] = &["invest_workbench", "local_qa_kb", "doc_sop"];
+/// 旧版 profile ID 列表,用于配置目录回退查找(兼容曾装过商业版的用户)
+const LEGACY_PROFILE_IDS: &[&str] =
+    &["prospectclaw", "invest_workbench", "local_qa_kb", "doc_sop"];
 
 /// 获取 OpenClaw 配置目录（带缓存）。
 /// 优先使用面板配置中的 openclawDir，自定义目录不存在时回退默认 ~/.openclaw。
@@ -109,7 +109,7 @@ pub fn invalidate_openclaw_dir_cache() {
 }
 
 pub fn panel_profiles_dir() -> PathBuf {
-    default_openclaw_dir().join("prospectclaw")
+    default_openclaw_dir().join("privix-community")
 }
 
 static PANEL_RUNTIME_DIR_CACHE: OnceLock<PathBuf> = OnceLock::new();

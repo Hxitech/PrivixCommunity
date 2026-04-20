@@ -306,13 +306,13 @@ export function renderSidebar(el) {
   // 迁移旧的系统区折叠 key（仅执行一次）
   if (!_zoneMigrated) {
     _zoneMigrated = true
-    if (localStorage.getItem('prospectclaw-sys-collapsed') !== null) {
-      const oldVal = localStorage.getItem('prospectclaw-sys-collapsed')
-      localStorage.setItem('prospectclaw-zone-system-collapsed', oldVal)
-      localStorage.removeItem('prospectclaw-sys-collapsed')
+    if (localStorage.getItem('privix-community-sys-collapsed') !== null) {
+      const oldVal = localStorage.getItem('privix-community-sys-collapsed')
+      localStorage.setItem('privix-community-zone-system-collapsed', oldVal)
+      localStorage.removeItem('privix-community-sys-collapsed')
     }
     // Phase B 迁移:移除已废弃的 nav-mode 存储(flyout 已删除)
-    try { localStorage.removeItem('prospectclaw-nav-mode') } catch {}
+    try { localStorage.removeItem('privix-community-nav-mode') } catch {}
   }
 
   let html = `
@@ -430,7 +430,7 @@ export function renderSidebar(el) {
 
       // 折叠组主线:顶部 toggle 按钮 + 子项列表
       // 默认折叠(除非用户显式展开过,即 localStorage === '0');当前路由激活的主线自动展开
-      const stored = localStorage.getItem(`prospectclaw-pillar-${pillar.id}-collapsed`)
+      const stored = localStorage.getItem(`privix-community-pillar-${pillar.id}-collapsed`)
       const collapsedPref = pillar.collapsible && stored !== '0'
       const effectiveCollapsed = pillar.collapsible && !pillar.alwaysExpanded && collapsedPref && !pillarHasActive
       const collapsedClass = effectiveCollapsed ? ' collapsed' : ''
@@ -559,7 +559,7 @@ export function renderSidebar(el) {
         const pillarEl = pillarToggle.closest('.nav-pillar')
         if (pillarEl && pillarId) {
           const isCollapsed = pillarEl.classList.toggle('collapsed')
-          localStorage.setItem(`prospectclaw-pillar-${pillarId}-collapsed`, isCollapsed ? '1' : '0')
+          localStorage.setItem(`privix-community-pillar-${pillarId}-collapsed`, isCollapsed ? '1' : '0')
         }
         return
       }

@@ -33,17 +33,17 @@ function migrateLocalStorage(newKey, oldKey) {
     localStorage.setItem(newKey, localStorage.getItem(oldKey))
   }
 }
-migrateLocalStorage('prospectclaw-last-session', 'clawpanel-last-session')
-migrateLocalStorage('prospectclaw-chat-selected-model', 'clawpanel-chat-selected-model')
-migrateLocalStorage('prospectclaw-chat-sidebar-open', 'clawpanel-chat-sidebar-open')
-migrateLocalStorage('prospectclaw-chat-session-names', 'clawpanel-chat-session-names')
-migrateLocalStorage('prospectclaw-guide-chat-dismissed', 'clawpanel-guide-chat-dismissed')
+migrateLocalStorage('privix-community-last-session', 'clawpanel-last-session')
+migrateLocalStorage('privix-community-chat-selected-model', 'clawpanel-chat-selected-model')
+migrateLocalStorage('privix-community-chat-sidebar-open', 'clawpanel-chat-sidebar-open')
+migrateLocalStorage('privix-community-chat-session-names', 'clawpanel-chat-session-names')
+migrateLocalStorage('privix-community-guide-chat-dismissed', 'clawpanel-guide-chat-dismissed')
 
-const STORAGE_SESSION_KEY = 'prospectclaw-last-session'
-const STORAGE_MODEL_KEY = 'prospectclaw-chat-selected-model'
-const STORAGE_SIDEBAR_KEY = 'prospectclaw-chat-sidebar-open'
-const STORAGE_SESSION_NAMES_KEY = 'prospectclaw-chat-session-names'
-const STORAGE_FAST_MODE_KEY = 'prospectclaw-chat-fast-sessions'
+const STORAGE_SESSION_KEY = 'privix-community-last-session'
+const STORAGE_MODEL_KEY = 'privix-community-chat-selected-model'
+const STORAGE_SIDEBAR_KEY = 'privix-community-chat-sidebar-open'
+const STORAGE_SESSION_NAMES_KEY = 'privix-community-chat-session-names'
+const STORAGE_FAST_MODE_KEY = 'privix-community-chat-fast-sessions'
 
 // 快捷指令数据：延迟求值，避免模块顶层调用 t()
 function getCommands() {
@@ -227,7 +227,7 @@ export async function render() {
   return page
 }
 
-const GUIDE_KEY = 'prospectclaw-guide-chat-dismissed'
+const GUIDE_KEY = 'privix-community-guide-chat-dismissed'
 
 function showPageGuide(container) {
   if (localStorage.getItem(GUIDE_KEY)) return

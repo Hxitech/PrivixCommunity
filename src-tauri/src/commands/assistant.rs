@@ -24,7 +24,7 @@ fn audit_log(action: &str, detail: &str) {
         .and_then(|mut f| std::io::Write::write_all(&mut f, line.as_bytes()));
 }
 
-/// Privix 当前 profile 的数据目录（~/.openclaw/prospectclaw/<profileId>/）
+/// Privix Community 数据目录(~/.openclaw/privix-community/)
 fn data_dir() -> PathBuf {
     super::panel_runtime_dir()
 }

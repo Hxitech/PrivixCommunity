@@ -1,10 +1,10 @@
 /**
  * 主题管理 — Apple 风格双模式（light / dark）
  */
-const THEME_PRESET_KEY = 'prospectclaw-theme-preset'
-const LEGACY_THEME_KEY = 'prospectclaw-theme'
+const THEME_PRESET_KEY = 'privix-community-theme-preset'
+const LEGACY_THEME_KEY = 'privix-community-theme'
 const OLD_THEME_KEY = 'clawpanel-theme'
-export const THEME_CHANGE_EVENT = 'prospectclaw:themechange'
+export const THEME_CHANGE_EVENT = 'privix-community:themechange'
 
 const DEFAULT_THEME_PRESET = 'light'
 
@@ -174,7 +174,7 @@ function getWindow() {
    用户自定义 CSS(v1.5 Agent Studio)
    读取 ~/.privix/user.css 注入到 <head>,覆盖 Apple Design 默认 token
    ============================================================ */
-const USER_CSS_ENABLED_KEY = 'prospectclaw-user-css-enabled'
+const USER_CSS_ENABLED_KEY = 'privix-community-user-css-enabled'
 const USER_CSS_STYLE_ID = 'privix-user-css'
 
 /** 用户自定义 CSS 默认启用(文件不存在时也没关系,不注入) */
@@ -243,7 +243,7 @@ export function initUserCss() {
 }
 
 /* ── UI 缩放 ── */
-const SCALE_KEY = 'prospectclaw-ui-scale'
+const SCALE_KEY = 'privix-community-ui-scale'
 
 export function initScale() {
   applyScale(getScale())

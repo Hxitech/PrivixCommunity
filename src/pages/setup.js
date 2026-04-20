@@ -15,7 +15,7 @@ import { runPostInstall } from '../lib/post-install.js'
 
 const SETUP_DESCRIPTION = BRAND_DESCRIPTION
 const PROFILE_HOME_ROUTE = getProfileHomeRoute()
-const DEPLOY_SCRIPT_URL = 'https://raw.githubusercontent.com/Hxitech/ProspectClaw/main/deploy.sh'
+const DEPLOY_SCRIPT_URL = 'https://raw.githubusercontent.com/privix-community/privix/main/deploy.sh'
 
 export async function render() {
   const page = document.createElement('div')

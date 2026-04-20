@@ -23,7 +23,7 @@ case "$MODE" in
     echo "   2/2 编译 Rust..."
     cd src-tauri && cargo build
     echo "✅ Debug 编译完成"
-    echo "   产物: src-tauri/target/debug/prospectclaw"
+    echo "   产物: src-tauri/target/debug/privix-community"
     ;;
   release)
     echo "📦 编译正式发布版本..."

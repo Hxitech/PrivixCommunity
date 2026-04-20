@@ -50,7 +50,7 @@ const isMac = process.platform === 'darwin'
 const isLinux = process.platform === 'linux'
 const SCOPES = ['operator.admin', 'operator.approvals', 'operator.pairing', 'operator.read', 'operator.write']
 const CLUSTER_TOKEN = 'clawpanel-cluster-secret-2026'
-const PANEL_PROFILES_DIR = path.join(OPENCLAW_DIR, 'prospectclaw')
+const PANEL_PROFILES_DIR = path.join(OPENCLAW_DIR, 'privix-community')
 const PANEL_RUNTIME_DIR = path.join(PANEL_PROFILES_DIR, PRODUCT_PROFILE_ID)
 const LEGACY_PANEL_CONFIG_PATH = path.join(OPENCLAW_DIR, 'clawpanel.json')
 const LEGACY_PANEL_DATA_DIR = path.join(OPENCLAW_DIR, 'clawpanel')
@@ -5392,27 +5392,12 @@ const handlers = {
 
   check_panel_update() { return { latest: null, url: 'https://github.com/Hxitech/ProspectClaw/releases' } },
 
-  // 前端热更新
+  // 前端热更新 — 社区版无远程更新清单,永远返回无更新
   async check_frontend_update() {
     const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
     const currentVersion = pkg.version
-
-    try {
-      const resp = await globalThis.fetch('https://www.privix.cn/update/latest.json', {
-        signal: AbortSignal.timeout(8000),
-        headers: { 'User-Agent': 'Privix-Web' },
-      })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const manifest = await resp.json()
-      const latestVersion = manifest.version || ''
-      const minAppVersion = manifest.minAppVersion || '0.0.0'
-      const compatible = versionGe(currentVersion, minAppVersion)
-      const hasUpdate = !!latestVersion && latestVersion !== currentVersion && compatible && versionGt(latestVersion, currentVersion)
-      return { currentVersion, latestVersion, hasUpdate, compatible, updateReady: false, manifest }
-    } catch {
-      return { currentVersion, latestVersion: currentVersion, hasUpdate: false, compatible: true, updateReady: false, manifest: { version: currentVersion } }
-    }
+    return { currentVersion, latestVersion: currentVersion, hasUpdate: false, compatible: true, updateReady: false, manifest: { version: currentVersion } }
   },
   download_frontend_update() { return { success: true, files: 12, path: FRONTEND_UPDATE_DIR } },
   rollback_frontend_update() { return { success: true } },
@@ -5982,7 +5967,7 @@ export function devApiPlugin() {
     _initApi()
   }
   return {
-    name: 'prospectclaw-dev-api',
+    name: 'privix-community-dev-api',
     configureServer(server) {
       ensureInit()
       server.middlewares.use(_apiMiddleware)

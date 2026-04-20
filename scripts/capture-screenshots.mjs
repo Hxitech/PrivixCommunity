@@ -198,13 +198,13 @@ async function main() {
 
   // 预设主题/语言
   await page.evaluate(() => {
-    localStorage.setItem('prospectclaw-theme-preset', 'light');
-    localStorage.setItem('prospectclaw-locale', 'zh-CN');
-    localStorage.setItem('prospectclaw_welcomed', '1');
+    localStorage.setItem('privix-community-theme-preset', 'light');
+    localStorage.setItem('privix-community-locale', 'zh-CN');
+    localStorage.setItem('privix_community_welcomed', '1');
     localStorage.setItem('welcome_modal_dismissed', '1');
     // 清除遗留的 flyout 偏好(v1.4.1 已废弃,侧边栏改为 9 主线 pillars)
-    localStorage.removeItem('prospectclaw-nav-mode');
-    sessionStorage.removeItem('prospectclaw_must_change_pw');
+    localStorage.removeItem('privix-community-nav-mode');
+    sessionStorage.removeItem('privix_community_must_change_pw');
     sessionStorage.removeItem('clawpanel_must_change_pw');
     document.documentElement.setAttribute('data-theme', 'light');
   });
@@ -220,7 +220,7 @@ async function main() {
 
   // 3. 登录后清理
   await page.evaluate(() => {
-    sessionStorage.removeItem('prospectclaw_must_change_pw');
+    sessionStorage.removeItem('privix_community_must_change_pw');
     sessionStorage.removeItem('clawpanel_must_change_pw');
     document.getElementById('pw-change-banner')?.remove();
     document.documentElement.setAttribute('data-theme', 'light');

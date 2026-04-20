@@ -103,12 +103,12 @@ test('theme options expose the agreed preset set and order', () => {
 })
 
 test('initTheme migrates legacy light preference to light preset', () => {
-  global.localStorage.setItem('prospectclaw-theme', 'light')
+  global.localStorage.setItem('privix-community-theme', 'light')
 
   initTheme()
 
-  assert.equal(global.localStorage.getItem('prospectclaw-theme-preset'), 'light')
-  assert.equal(global.localStorage.getItem('prospectclaw-theme'), null)
+  assert.equal(global.localStorage.getItem('privix-community-theme-preset'), 'light')
+  assert.equal(global.localStorage.getItem('privix-community-theme'), null)
   assert.equal(getThemePreset(), 'light')
   assert.equal(getTheme(), 'light')
   assert.equal(global.document.documentElement.dataset.theme, 'light')
@@ -119,7 +119,7 @@ test('initTheme migrates old dark key to dark preset', () => {
 
   initTheme()
 
-  assert.equal(global.localStorage.getItem('prospectclaw-theme-preset'), 'dark')
+  assert.equal(global.localStorage.getItem('privix-community-theme-preset'), 'dark')
   assert.equal(global.localStorage.getItem('clawpanel-theme'), null)
   assert.equal(getThemePreset(), 'dark')
   assert.equal(getTheme(), 'dark')
@@ -133,7 +133,7 @@ test('initTheme defaults to light instead of following system dark preference', 
 
   assert.equal(getThemePreset(), 'light')
   assert.equal(getTheme(), 'light')
-  assert.equal(global.localStorage.getItem('prospectclaw-theme-preset'), 'light')
+  assert.equal(global.localStorage.getItem('privix-community-theme-preset'), 'light')
 })
 
 test('setThemePreset applies dataset values and dispatches theme change event', () => {
@@ -145,7 +145,7 @@ test('setThemePreset applies dataset values and dispatches theme change event', 
   stop()
 
   assert.equal(applied.id, 'dark')
-  assert.equal(global.localStorage.getItem('prospectclaw-theme-preset'), 'dark')
+  assert.equal(global.localStorage.getItem('privix-community-theme-preset'), 'dark')
   assert.equal(getThemePreset(), 'dark')
   assert.equal(getTheme(), 'dark')
   assert.equal(global.document.documentElement.dataset.theme, 'dark')
