@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PostFileWrite": [
+      {
+        "type": "command",
+        "command": "cargo fmt -- $FILEPATH 2>/dev/null || true",
+        "if": "Write(src-tauri/**/*.rs) || Edit(src-tauri/**/*.rs)",
+        "statusMessage": "Formatting Rust code..."
+      }
+    ]
+  }
+}

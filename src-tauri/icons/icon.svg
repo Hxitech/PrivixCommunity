@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="privix-circle" x1="111" y1="74" x2="213" y2="190" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DCE7FF"/>
+      <stop offset="1" stop-color="#8FB3F5"/>
+    </linearGradient>
+    <linearGradient id="privix-base" x1="136" y1="138" x2="402" y2="432" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#97A1FF"/>
+      <stop offset="1" stop-color="#B8C0FF"/>
+    </linearGradient>
+    <linearGradient id="privix-swoosh" x1="92" y1="224" x2="384" y2="388" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#86B4F5"/>
+      <stop offset="1" stop-color="#C7D9FF"/>
+    </linearGradient>
+  </defs>
+  <circle cx="172" cy="160" r="54" fill="url(#privix-circle)"/>
+  <path d="M237.39 113.2C251.71 88.34 287.53 88.34 301.85 113.2L430.03 335.72C444.35 360.58 426.44 391.65 397.79 391.65H141.45C112.8 391.65 94.89 360.58 109.21 335.72L237.39 113.2Z" fill="url(#privix-base)"/>
+  <path d="M170.02 201.44C220.85 167.52 286.6 160.67 374.95 181.44C319.89 276.57 231.82 335.44 110.74 358.07C97.44 360.55 87.82 345.57 95.87 334.71C114.16 310.03 138.88 265.63 170.02 201.44Z" fill="url(#privix-swoosh)"/>
+  <path d="M178.41 214.72C261.49 194.13 327.13 186.69 375.33 192.39C326.43 274.32 262.11 332.18 182.37 365.97C225.65 337.16 258.4 307.44 280.61 276.8C302.28 246.9 319.57 221.35 332.49 200.16C289.65 203.76 238.29 215.28 178.41 234.73V214.72Z" fill="white"/>
+</svg>

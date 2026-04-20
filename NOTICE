@@ -1,0 +1,11 @@
+Privix Community
+Copyright 2026 Privix Community Contributors
+
+This product includes software developed by the ClawPanel project
+(https://github.com/qingchencloud/clawpanel), licensed under the MIT License.
+Components and files derived from that upstream are incorporated in this
+repository; see LICENSE for the retained MIT notice.
+
+All other components in this repository — the Privix Community modifications,
+integrations, and additions on top of that MIT-licensed base — are distributed
+under the Apache License, Version 2.0 (see LICENSE).

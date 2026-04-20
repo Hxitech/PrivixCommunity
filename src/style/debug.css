@@ -1,0 +1,45 @@
+/**
+ * 调试页面样式
+ */
+
+.debug-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.debug-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.debug-table td:first-child {
+  color: var(--text-secondary);
+  width: 200px;
+  font-weight: 500;
+}
+
+.debug-table td:last-child {
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.debug-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* 状态概览卡片 */
+.config-section {
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.config-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}

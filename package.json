@@ -1,0 +1,55 @@
+{
+  "name": "privix-community",
+  "version": "2.0.0-ce.1",
+  "private": true,
+  "description": "Privix Community - 开源 AI Agent 桌面工作台, 基于 Tauri v2 的跨平台客户端, 集成 OpenClaw + Hermes 双引擎",
+  "type": "module",
+  "author": "Privix Community Contributors",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/privix-community/privix",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/privix-community/privix.git"
+  },
+  "keywords": [
+    "openclaw",
+    "ai-agent",
+    "tauri",
+    "desktop-app",
+    "community",
+    "management-panel"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "node --test",
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "serve": "node scripts/serve.js",
+    "version:sync": "node scripts/sync-version.js",
+    "version:set": "node scripts/sync-version.js",
+    "check:i18n": "node scripts/check-i18n-keys.js",
+    "i18n:check": "node scripts/check-i18n-keys.js",
+    "i18n:check:strict": "node scripts/check-i18n-keys.js --strict-all-locales",
+    "i18n:orphans": "node scripts/check-i18n-keys.js --orphans",
+    "i18n:install-hook": "node scripts/install-git-hooks.js",
+    "icon:regen": "tauri icon assets/privix-community-mark.png -o src-tauri/icons",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.5.0",
+    "@tauri-apps/plugin-autostart": "^2.2.0",
+    "@tauri-apps/plugin-dialog": "^2.7.0",
+    "@tauri-apps/plugin-shell": "^2.2.1",
+    "docx": "^9.6.1",
+    "pptxgenjs": "^4.0.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@tauri-apps/cli": "^2.5.0",
+    "eslint": "^10.2.0",
+    "vite": "^6.3.5"
+  }
+}

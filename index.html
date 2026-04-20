@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privix Community</title>
+  <link rel="icon" type="image/svg+xml" href="/images/privix-mark.svg">
+  <link rel="shortcut icon" type="image/svg+xml" href="/images/privix-mark.svg">
+  <!-- 样式由 main.js 通过 Vite 统一加载 -->
+  <style>
+    /* 启动加载屏（内联，零依赖，立即渲染） */
+    body.app-shell-pending #app {
+      opacity: 0;
+      transform: translateY(10px) scale(0.995);
+    }
+    body.app-shell-ready #app {
+      opacity: 1;
+      transform: none;
+      transition: opacity 420ms ease, transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    #splash {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(151,161,255,0.18), transparent 26%),
+        radial-gradient(circle at 82% 20%, rgba(143,179,245,0.16), transparent 24%),
+        radial-gradient(circle at 50% 82%, rgba(199,217,255,0.22), transparent 28%),
+        #f5f5f7;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+    @media (prefers-color-scheme: dark) {
+      #splash {
+        background:
+          radial-gradient(circle at 18% 18%, rgba(151,161,255,0.2), transparent 26%),
+          radial-gradient(circle at 82% 20%, rgba(143,179,245,0.16), transparent 24%),
+          radial-gradient(circle at 50% 82%, rgba(90,114,238,0.18), transparent 30%),
+          #000000;
+      }
+    }
+    #splash.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+    #splash .sp-shell {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 280px;
+      padding: 30px 32px 28px;
+      border-radius: 28px;
+      border: 1px solid rgba(151,161,255,0.18);
+      background: rgba(255,255,255,0.72);
+      box-shadow: 0 28px 80px rgba(17, 24, 39, 0.12);
+      backdrop-filter: blur(18px) saturate(140%);
+      -webkit-backdrop-filter: blur(18px) saturate(140%);
+    }
+    @media (prefers-color-scheme: dark) {
+      #splash .sp-shell {
+        border-color: rgba(199,217,255,0.12);
+        background: rgba(16,18,24,0.74);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+      }
+    }
+    #splash .sp-logo {
+      width: 60px; height: 60px; margin-bottom: 18px;
+      border-radius: 12px; object-fit: contain;
+      filter: drop-shadow(0 12px 24px rgba(90,114,238,0.18));
+      animation: sp-float 2.6s ease-in-out infinite;
+    }
+    #splash .sp-name {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif;
+      font-size: 22px; font-weight: 600; letter-spacing: -0.32px;
+      color: #1d1d1f; margin-bottom: 6px;
+    }
+    @media (prefers-color-scheme: dark) { #splash .sp-name { color: #f5f5f7; } }
+    #splash .sp-subtitle {
+      font-size: 12px; color: rgba(0,0,0,0.42); margin-bottom: 18px; letter-spacing: -0.12px;
+    }
+    @media (prefers-color-scheme: dark) { #splash .sp-subtitle { color: rgba(255,255,255,0.42); } }
+    #splash .sp-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(90,114,238,0.08);
+      color: #4e67d9;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    #splash .sp-status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #5A72EE, #8FB3F5);
+      box-shadow: 0 0 0 4px rgba(90,114,238,0.12);
+      animation: sp-breathe 1.6s ease-in-out infinite;
+    }
+    @media (prefers-color-scheme: dark) {
+      #splash .sp-status {
+        background: rgba(199,217,255,0.1);
+        color: #c7d9ff;
+      }
+    }
+    #splash .sp-bar {
+      width: 156px; height: 4px; border-radius: 999px; overflow: hidden;
+      background: rgba(0, 0, 0, 0.06);
+    }
+    @media (prefers-color-scheme: dark) { #splash .sp-bar { background: rgba(255, 255, 255, 0.08); } }
+    #splash .sp-bar-inner {
+      width: 44%; height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #5A72EE, #8FB3F5, #C7D9FF);
+      animation: sp-slide 1.35s ease-in-out infinite;
+    }
+    #splash .sp-site {
+      margin-top: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Helvetica Neue', sans-serif;
+      font-size: 12px; color: rgba(0, 0, 0, 0.32); letter-spacing: -0.12px;
+    }
+    @media (prefers-color-scheme: dark) { #splash .sp-site { color: rgba(255, 255, 255, 0.32); } }
+    #splash .sp-site a {
+      color: #4e67d9; text-decoration: none;
+    }
+    #splash .sp-site a:hover { text-decoration: underline; }
+    @keyframes sp-slide {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(200%); }
+      100% { transform: translateX(-100%); }
+    }
+    @keyframes sp-float {
+      0%, 100% { opacity: 0.84; transform: translateY(0) scale(1); }
+      50% { opacity: 1; transform: translateY(-4px) scale(1.04); }
+    }
+    @keyframes sp-breathe {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 启动加载屏 -->
+  <div id="splash">
+    <div class="sp-shell">
+      <img class="sp-logo" src="/images/privix-mark.svg" alt="Privix Community">
+      <div class="sp-name">Privix Community</div>
+      <div class="sp-subtitle">开源 AI Agent 工作台</div>
+      <div class="sp-status">正在准备工作台</div>
+      <div class="sp-bar"><div class="sp-bar-inner"></div></div>
+      <div class="sp-site">Apache 2.0 · OpenClaw + Hermes</div>
+    </div>
+  </div>
+  <script>setTimeout(function(){var s=document.getElementById('splash');if(s){document.body.classList.add('app-shell-ready');document.body.classList.remove('app-shell-pending');s.classList.add('hide');setTimeout(function(){s.remove()},500)}},5000)</script>
+
+  <div id="app">
+    <aside id="sidebar"></aside>
+    <div id="main-col">
+      <div id="update-banner" class="update-banner update-banner-hidden"></div>
+      <div id="gw-banner" class="gw-banner gw-banner-hidden"></div>
+      <div id="top-header"></div>
+      <main id="content"></main>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

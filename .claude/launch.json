@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:/usr/local/bin:$HOME/.cargo/bin:$PATH && cd /Users/sang/Documents/ClawPanelInvest && npm run profile:apply && npx vite --port 1420"],
+      "port": 1420
+    },
+    {
+      "name": "sop-dev",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "PROSPECTCLAW_PRODUCT_PROFILE=doc_sop npx vite --port 1421"],
+      "port": 1421
+    },
+    {
+      "name": "kb-dev",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "PROSPECTCLAW_PRODUCT_PROFILE=local_qa_kb npx vite --port 1422"],
+      "port": 1422
+    },
+    {
+      "name": "portal",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /Users/sang/Documents/ProspectClaw && npx vite --port 1423"],
+      "port": 1423
+    },
+    {
+      "name": "portal-site",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": ["-c", "cd /Users/sang/Documents/ProspectClawPortal && npx serve -l 1424 ."],
+      "port": 1424
+    }
+  ]
+}

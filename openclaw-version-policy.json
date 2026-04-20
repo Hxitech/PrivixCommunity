@@ -1,0 +1,172 @@
+{
+  "standalone": {
+    "baseUrl": "https://dl.qrj.ai/openclaw-standalone",
+    "enabled": true
+  },
+  "r2": {
+    "baseUrl": "https://dl.qrj.ai/openclaw-zh",
+    "enabled": true
+  },
+  "default": {
+    "official": {
+      "recommended": "2026.4.12"
+    },
+    "chinese": {
+      "recommended": "2026.4.12-zh.1"
+    }
+  },
+  "panels": {
+    "0.9.0": {
+      "official": {
+        "recommended": "2026.3.13"
+      },
+      "chinese": {
+        "recommended": "2026.3.13-zh.1"
+      }
+    },
+    "0.9.1": {
+      "official": {
+        "recommended": "2026.3.13"
+      },
+      "chinese": {
+        "recommended": "2026.3.13-zh.1"
+      }
+    },
+    "1.0.30": {
+      "official": {
+        "recommended": "2026.3.24"
+      },
+      "chinese": {
+        "recommended": "2026.3.24-zh.1"
+      }
+    },
+    "1.1.4": {
+      "official": {
+        "recommended": "2026.3.28"
+      },
+      "chinese": {
+        "recommended": "2026.3.28-zh.1"
+      }
+    },
+    "1.2.0": {
+      "official": {
+        "recommended": "2026.3.28"
+      },
+      "chinese": {
+        "recommended": "2026.3.28-zh.1"
+      }
+    },
+    "1.2.1": {
+      "official": {
+        "recommended": "2026.4.1"
+      },
+      "chinese": {
+        "recommended": "2026.4.1-zh.1"
+      }
+    },
+    "1.2.3-fix1": {
+      "official": {
+        "recommended": "2026.4.2"
+      },
+      "chinese": {
+        "recommended": "2026.4.1-zh.1"
+      }
+    },
+    "1.2.8": {
+      "official": {
+        "recommended": "2026.4.8"
+      },
+      "chinese": {
+        "recommended": "2026.4.8-zh.1"
+      }
+    },
+    "1.2.3": {
+      "official": {
+        "recommended": "2026.4.2"
+      },
+      "chinese": {
+        "recommended": "2026.4.1-zh.1"
+      }
+    },
+    "1.2.2": {
+      "official": {
+        "recommended": "2026.4.2"
+      },
+      "chinese": {
+        "recommended": "2026.4.1-zh.1"
+      }
+    },
+    "1.3.0": {
+      "official": {
+        "recommended": "2026.4.9"
+      },
+      "chinese": {
+        "recommended": "2026.4.9-zh.1"
+      }
+    },
+    "1.4.0": {
+      "official": {
+        "recommended": "2026.4.11"
+      },
+      "chinese": {
+        "recommended": "2026.4.11-zh.1"
+      }
+    },
+    "1.4.1": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    },
+    "1.4.2": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    },
+    "1.4.3": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    },
+    "1.4.4": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    },
+    "1.4.5": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    },
+    "1.4.5-fix1": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    },
+    "1.4.5-fix2": {
+      "official": {
+        "recommended": "2026.4.12"
+      },
+      "chinese": {
+        "recommended": "2026.4.12-zh.1"
+      }
+    }
+  }
+}

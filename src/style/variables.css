@@ -1,0 +1,337 @@
+/* ========================================
+   Privix — Apple Design System
+   主题：light / dark（双模式）
+   灵感：DESIGN.md · Apple HIG
+   ======================================== */
+
+/* ── 浅色模式（默认） ── */
+:root,
+[data-theme="light"] {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #e8e8ed;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f5f5f7;
+  --bg-hover: #f0f0f5;
+  --bg-glass: rgba(255, 255, 255, 0.72);
+  --bg-glass-hover: rgba(255, 255, 255, 0.85);
+
+  --border-primary: rgba(0, 0, 0, 0.06);
+  --border-secondary: rgba(0, 0, 0, 0.04);
+  --border-focus: var(--brand-accent);
+  --border: var(--border-primary);
+  --border-color: var(--border-primary);
+
+  --text-primary: #1d1d1f;
+  --text-secondary: rgba(0, 0, 0, 0.56);
+  --text-tertiary: rgba(0, 0, 0, 0.32);
+  --text-inverse: #ffffff;
+
+  --accent: var(--brand-accent);
+  --accent-hover: var(--brand-accent-hover);
+  --accent-muted: rgba(var(--brand-periwinkle-rgb), 0.16);
+  --accent-subtle: rgba(var(--brand-periwinkle-rgb), 0.08);
+  --primary: var(--accent);
+
+  --success: #248a3d;
+  --success-muted: rgba(36, 138, 61, 0.08);
+  --success-bg: rgba(36, 138, 61, 0.06);
+  --warning: #b25000;
+  --warning-muted: rgba(178, 80, 0, 0.08);
+  --warning-bg: rgba(178, 80, 0, 0.06);
+  --error: #d70015;
+  --error-muted: rgba(215, 0, 21, 0.08);
+  --error-bg: rgba(215, 0, 21, 0.06);
+  --info: var(--accent);
+  --info-muted: var(--accent-muted);
+
+  --evosci-subagent: var(--accent);
+  --evosci-subagent-muted: var(--accent-muted);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 3px 5px 30px rgba(0, 0, 0, 0.22);
+  --shadow-card: 3px 5px 30px rgba(0, 0, 0, 0.22); /* Apple 签名阴影 */
+
+  /* ── Apple 语义 token（DESIGN.md）── */
+  --surface-light: var(--bg-primary);         /* 浅色页面底(#f5f5f7) */
+  --surface-white: #ffffff;
+  --surface-near-black: #1d1d1f;              /* 深色按钮填充 / 主文字 */
+  --accent-blue: var(--accent);               /* Privix 主强调色 */
+  --link-blue: var(--brand-link-light);       /* 浅底文本链接 */
+  --bright-blue: var(--brand-link-dark);      /* 深底文本链接 */
+  --text-body-secondary: rgba(0, 0, 0, 0.8);  /* Apple body secondary */
+  --text-disabled: rgba(0, 0, 0, 0.48);
+  --nav-glass-bg: rgba(0, 0, 0, 0.8);
+  --nav-glass-filter: saturate(180%) blur(20px);
+
+  /* ── 侧边栏（始终深色玻璃） ── */
+  --sidebar-surface: rgba(0, 0, 0, 0.82);
+  --sidebar-surface-elevated: rgba(255, 255, 255, 0.06);
+  --sidebar-surface-strong: rgba(255, 255, 255, 0.1);
+  --sidebar-border-strong: rgba(255, 255, 255, 0.12);
+  --sidebar-border-soft: rgba(255, 255, 255, 0.06);
+  --sidebar-text-primary: #ffffff;
+  --sidebar-text-secondary: rgba(255, 255, 255, 0.72);
+  --sidebar-text-tertiary: rgba(255, 255, 255, 0.42);
+  --sidebar-section-accent: rgba(255, 255, 255, 0.56);
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-active-surface: rgba(255, 255, 255, 0.14);
+  --sidebar-active-edge: rgba(255, 255, 255, 0.24);
+  --sidebar-icon-surface: rgba(255, 255, 255, 0.06);
+  --sidebar-icon-surface-strong: rgba(var(--brand-periwinkle-rgb), 0.28);
+  --sidebar-glow: rgba(var(--brand-periwinkle-rgb), 0.16);
+  --sidebar-flyout-surface: rgba(28, 28, 30, 0.96);
+  --sidebar-flyout-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  --sidebar-flyout-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-flyout-active: rgba(255, 255, 255, 0.14);
+
+  /* ── 顶栏 ── */
+  --header-surface: rgba(255, 255, 255, 0.72);
+  --header-surface-strong: rgba(255, 255, 255, 0.92);
+  --header-border-soft: rgba(0, 0, 0, 0.06);
+  --header-border-strong: rgba(0, 0, 0, 0.1);
+  --header-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  --header-chip-bg: rgba(0, 0, 0, 0.04);
+  --header-chip-border: rgba(0, 0, 0, 0.06);
+  --header-chip-text: #1d1d1f;
+
+  /* ── 对话框 / FAB ── */
+  --dialog-scrim: rgba(0, 0, 0, 0.4);
+  --help-fab-bg: rgba(255, 255, 255, 0.88);
+  --help-fab-border: rgba(0, 0, 0, 0.08);
+  --help-fab-text: var(--accent);
+  --help-fab-open-bg: var(--accent);
+  --help-fab-open-text: #ffffff;
+  --help-panel-shadow: 3px 5px 30px rgba(0, 0, 0, 0.22);
+}
+
+/* ── 深色模式 ── */
+[data-theme="dark"] {
+  --bg-primary: #000000;
+  --bg-secondary: #1c1c1e;
+  --bg-tertiary: #2c2c2e;
+  --bg-card: #1c1c1e;
+  --bg-card-hover: #2c2c2e;
+  --bg-hover: #262628;
+  --bg-glass: rgba(28, 28, 30, 0.72);
+  --bg-glass-hover: rgba(44, 44, 46, 0.85);
+
+  --border-primary: rgba(255, 255, 255, 0.08);
+  --border-secondary: rgba(255, 255, 255, 0.04);
+  --border-focus: var(--brand-accent);
+  --border: var(--border-primary);
+  --border-color: var(--border-primary);
+
+  --text-primary: #f5f5f7;
+  --text-secondary: rgba(255, 255, 255, 0.56);
+  --text-tertiary: rgba(255, 255, 255, 0.32);
+  --text-inverse: #1d1d1f;
+
+  --accent: var(--brand-accent);
+  --accent-hover: var(--brand-accent-hover);
+  --accent-muted: rgba(var(--brand-periwinkle-rgb), 0.2);
+  --accent-subtle: rgba(var(--brand-cloud-rgb), 0.1);
+  --primary: var(--accent);
+
+  --success: #30d158;
+  --success-muted: rgba(48, 209, 88, 0.14);
+  --success-bg: rgba(48, 209, 88, 0.1);
+  --warning: #ff9f0a;
+  --warning-muted: rgba(255, 159, 10, 0.14);
+  --warning-bg: rgba(255, 159, 10, 0.1);
+  --error: #ff453a;
+  --error-muted: rgba(255, 69, 58, 0.14);
+  --error-bg: rgba(255, 69, 58, 0.1);
+  --info: var(--accent);
+  --info-muted: var(--accent-muted);
+
+  --evosci-subagent: var(--accent);
+  --evosci-subagent-muted: var(--accent-muted);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 3px 5px 30px rgba(0, 0, 0, 0.5);
+  --shadow-card: 3px 5px 30px rgba(0, 0, 0, 0.5);
+
+  /* ── Apple 语义 token(深色镜像)── */
+  --surface-light: #000000;
+  --surface-white: #1c1c1e;
+  --surface-near-black: #f5f5f7;
+  --accent-blue: var(--accent);
+  --link-blue: var(--brand-link-dark);        /* 深底统一使用高亮链接色 */
+  --bright-blue: var(--brand-link-dark);
+  --text-body-secondary: rgba(255, 255, 255, 0.8);
+  --text-disabled: rgba(255, 255, 255, 0.48);
+  --nav-glass-bg: rgba(0, 0, 0, 0.88);
+  --nav-glass-filter: saturate(180%) blur(20px);
+
+  /* ── 侧边栏（深色模式下同样深色玻璃） ── */
+  --sidebar-surface: rgba(0, 0, 0, 0.88);
+  --sidebar-surface-elevated: rgba(255, 255, 255, 0.04);
+  --sidebar-surface-strong: rgba(255, 255, 255, 0.08);
+  --sidebar-border-strong: rgba(255, 255, 255, 0.1);
+  --sidebar-border-soft: rgba(255, 255, 255, 0.04);
+  --sidebar-text-primary: #f5f5f7;
+  --sidebar-text-secondary: rgba(255, 255, 255, 0.64);
+  --sidebar-text-tertiary: rgba(255, 255, 255, 0.36);
+  --sidebar-section-accent: rgba(255, 255, 255, 0.48);
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active-surface: rgba(255, 255, 255, 0.12);
+  --sidebar-active-edge: rgba(255, 255, 255, 0.2);
+  --sidebar-icon-surface: rgba(255, 255, 255, 0.04);
+  --sidebar-icon-surface-strong: rgba(var(--brand-cloud-rgb), 0.22);
+  --sidebar-glow: rgba(var(--brand-cloud-rgb), 0.16);
+  --sidebar-flyout-surface: rgba(22, 22, 24, 0.96);
+  --sidebar-flyout-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --sidebar-flyout-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-flyout-active: rgba(255, 255, 255, 0.12);
+
+  --header-surface: rgba(0, 0, 0, 0.72);
+  --header-surface-strong: rgba(0, 0, 0, 0.88);
+  --header-border-soft: rgba(255, 255, 255, 0.06);
+  --header-border-strong: rgba(255, 255, 255, 0.1);
+  --header-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  --header-chip-bg: rgba(255, 255, 255, 0.06);
+  --header-chip-border: rgba(255, 255, 255, 0.08);
+  --header-chip-text: #f5f5f7;
+
+  --dialog-scrim: rgba(0, 0, 0, 0.56);
+  --help-fab-bg: rgba(28, 28, 30, 0.88);
+  --help-fab-border: rgba(255, 255, 255, 0.08);
+  --help-fab-text: var(--accent);
+  --help-fab-open-bg: var(--accent);
+  --help-fab-open-text: #ffffff;
+  --help-panel-shadow: 3px 5px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   共享变量（不随主题变化）
+   ======================================== */
+:root {
+  /* Privix 品牌色层 — 从现 logo 提取 */
+  --brand-mist: #DCE7FF;
+  --brand-cloud: #C7D9FF;
+  --brand-sky: #8FB3F5;
+  --brand-periwinkle: #97A1FF;
+  --brand-lilac: #B8C0FF;
+  --brand-accent: #5A72EE;
+  --brand-accent-hover: #4B63D8;
+  --brand-link-light: #4E67D9;
+  --brand-link-dark: #C7D9FF;
+  --brand-mist-rgb: 220, 231, 255;
+  --brand-cloud-rgb: 199, 217, 255;
+  --brand-sky-rgb: 143, 179, 245;
+  --brand-periwinkle-rgb: 151, 161, 255;
+  --brand-lilac-rgb: 184, 192, 255;
+  --brand-accent-rgb: 90, 114, 238;
+
+  /* 间距 — 8px 基准 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+
+  /* 圆角 — Apple 风格 */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 11px;                   /* DESIGN: 搜索/筛选输入框 */
+  --radius-xl: 12px;
+  --radius-pill: 980px;
+  --radius-circle: 50%;                /* 媒体控件、头像 */
+
+  /* 字体 — SF Pro 优先，系统回退 */
+  --font-sans: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+  --font-display: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* 字号 — Apple 排版层级 */
+  --font-size-xs: 10px;   /* nano */
+  --font-size-sm: 12px;   /* micro / nav */
+  --font-size-md: 14px;   /* caption / link / body small */
+  --font-size-lg: 17px;   /* body — Apple 核心正文 / 标准 button */
+  --font-size-xl: 21px;   /* sub-heading / card title */
+  --font-size-2xl: 28px;  /* tile heading */
+  --font-size-3xl: 40px;  /* section heading */
+  --font-size-metric: 56px; /* display hero */
+
+  /* Apple 角色别名(便于组件语义化引用) */
+  --font-size-nav: var(--font-size-sm);       /* 12px 导航链接 */
+  --font-size-link: var(--font-size-md);      /* 14px link pill */
+  --font-size-button: var(--font-size-lg);    /* 17px 标准按钮 */
+  --font-size-button-lg: 18px;                /* 大按钮 */
+
+  /* 字间距 — Apple 负 tracking */
+  --tracking-display: -0.28px;   /* 56px hero */
+  --tracking-section: -0.2px;    /* 40px heading */
+  --tracking-tile: 0.196px;      /* 28px tile */
+  --tracking-body: -0.374px;     /* 17px body */
+  --tracking-caption: -0.224px;  /* 14px caption */
+  --tracking-link: -0.224px;     /* 14px link — 别名 */
+  --tracking-micro: -0.12px;     /* 12px micro */
+  --tracking-nano: -0.08px;      /* 10px nano */
+  --tracking-nav: 0;             /* 12px nav normal */
+  --tracking-button: 0;          /* 按钮 normal */
+
+  /* 行高 — Apple 风格 */
+  --leading-tight: 1.07;    /* display hero */
+  --leading-section: 1.10;  /* section heading */
+  --leading-tile: 1.14;     /* tile heading */
+  --leading-card: 1.19;     /* card title */
+  --leading-body: 1.47;     /* body text */
+  --leading-micro: 1.33;    /* micro text */
+
+  /* 过渡 */
+  --transition-fast: 120ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* 布局尺寸 */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 56px;
+  --header-height: 48px;
+  --sidebar-logo-size: 40px;
+  --sidebar-header-height: 72px;
+
+  /* 导航尺寸 */
+  --nav-item-font: 13px;
+  --nav-item-padding-y: 8px;
+  --nav-item-padding-x: 12px;
+  --nav-icon-size: 18px;
+  --nav-item-radius: 8px;
+  --nav-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --nav-transition-fast: 180ms var(--nav-motion-ease);
+  --nav-transition-slow: 240ms var(--nav-motion-ease);
+
+  /* UI 缩放 */
+  --ui-scale: 1;
+}
+
+/* ========================================
+   UI Scale 缩放应用
+   ======================================== */
+#app {
+  font-size: calc(var(--font-size-md) * var(--ui-scale));
+}
+#sidebar .nav-zone-primary .nav-item {
+  font-size: calc(var(--nav-item-font) * var(--ui-scale));
+}
+.page-title {
+  font-size: calc(var(--font-size-2xl) * var(--ui-scale));
+}
+.stat-card-value {
+  font-size: calc(var(--font-size-2xl) * var(--ui-scale));
+}
+.invest-stat-value {
+  font-size: calc(var(--font-size-metric) * var(--ui-scale));
+}
+
+/* ── RTL（从右到左）支持 ──
+   本项目通过 CSS 逻辑属性 (logical properties) 实现 RTL 布局，
+   如 margin-inline-start / padding-inline-end / inset-inline-start 等。
+   无法用逻辑属性覆盖的特例（如 SVG 镜像、translateX 动画）
+   放在 rtl.css 中通过 [dir="rtl"] 选择器处理。
+   ── */

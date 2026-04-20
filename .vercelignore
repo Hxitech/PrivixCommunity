@@ -1,0 +1,12 @@
+.git
+.DS_Store
+.claude
+.windsurf
+.vercel
+node_modules
+dist
+tests
+docs
+src-tauri
+C:
+素材

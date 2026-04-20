@@ -1,0 +1,90 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+src-tauri/target/
+
+# 日志
+*.log
+tauri-dev.log
+api_doc_mcp.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# 构建临时文件
+nul
+release_body.md
+release_body.md.bak
+
+# 内部开发文档（不入公开仓）
+BLOCKING_ISSUES_REPORT.md
+__clawapp-chat-ref.js
+LOBSTER-LEGION-ARCHIVE.md
+
+# 大文件（宣传视频·原始版本）
+docs/promo-video.mp4
+
+# IDE / 编辑器
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/launch.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rust 开发工具
+src-tauri/.cargo/
+.codex/
+.vercel
+
+# ── v1.0.26 新增：防止二进制大文件误提交 ──
+
+# 素材目录：Office 文档 / 大图
+素材/**/*.pptx
+素材/**/*.xlsx
+素材/**/*.pdf
+素材/**/*.docx
+素材/**/*.mp4
+素材/**/*.mov
+
+# docs 目录：文档产物
+docs/**/*.pdf
+docs/**/*.docx
+docs/**/*.pptx
+
+# 通用二进制 / 大文件
+*.dmg
+*.pkg
+*.zip
+*.tar.gz
+*.rar
+
+# 敏感文件
+.env
+.env.*
+!.env.example
+
+# Windows 路径误提交防护
+C:/
+
+# Claude 工作树（开发临时产物）
+.claude/worktrees/
+
+# 临时文件
+*.swp
+*.swo
+*~
+lu*.tmp

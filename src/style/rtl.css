@@ -1,0 +1,47 @@
+/* ========================================
+   RTL (Right-to-Left) 特殊覆写
+   适用于阿拉伯语、希伯来语等 RTL 语言。
+   大部分方向性已通过 CSS 逻辑属性处理，
+   本文件仅覆盖无法用逻辑属性实现的特例。
+   ======================================== */
+
+/* ── 方向性 SVG 图标镜像（如 chevron、箭头） ── */
+[dir="rtl"] .evosci-chevron,
+[dir="rtl"] .chat-tool-summary::before,
+[dir="rtl"] .breadcrumb-sep {
+  transform: scaleX(-1);
+}
+
+/* 已展开的 chevron：在 RTL 下保持 rotate 但镜像 */
+[dir="rtl"] .evosci-chevron.open {
+  transform: scaleX(-1) rotate(90deg);
+}
+
+/* ── translateX 动画翻转 ── */
+
+/* 移动端侧边栏：LTR 从左滑入，RTL 从右滑入 */
+[dir="rtl"] #sidebar {
+  transform: translateX(100%);
+}
+[dir="rtl"] #sidebar.sidebar-open {
+  transform: translateX(0);
+  box-shadow: -10px 0 28px rgba(0, 0, 0, 0.22);
+}
+
+/* ── 时间线节点对齐 ── */
+/* 折叠区 rotate 方向 */
+[dir="rtl"] [class*="nav-zone-"].collapsed .zone-toggle-btn svg {
+  transform: rotate(90deg);
+}
+
+/* ── 开关滑块 translateX 方向翻转 ── */
+/* 通用 toggle 开关：选中时向反方向滑动 */
+[dir="rtl"] .toggle-slider.active::before,
+[dir="rtl"] .ast-switch-track.active::after {
+  transform: translateX(-100%);
+}
+
+/* ── box-shadow 水平偏移翻转 ── */
+[dir="rtl"] #sidebar {
+  box-shadow: -24px 0 48px rgba(8, 15, 26, 0.12);
+}

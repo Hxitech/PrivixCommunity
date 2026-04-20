@@ -1,0 +1,63 @@
+{
+  "id": "privix-community",
+  "productName": "Privix Community",
+  "brand": {
+    "ownerName": "Privix Community",
+    "ownerNameEn": "Privix Community",
+    "logoMode": "neutral",
+    "logoSrc": "/images/privix-mark.svg",
+    "logoAlt": "Privix Community",
+    "title": "Privix Community",
+    "subtitle": "Open-source AI Agent Workbench",
+    "shellLabel": "Privix Community",
+    "aboutSubtitleHtml": "Privix Community · Apache-2.0 开源版",
+    "setupTagline": "Privix Community",
+    "showCompanyProfile": false,
+    "companyWebsite": "",
+    "companyEmail": "",
+    "companyPhone": "",
+    "companyAddress": "",
+    "companyTagline": "本地运行的 AI Agent 工作台 · 数据本地存储 · 直连模型 Provider",
+    "companyIntro": [],
+    "neutralDescription": "本地运行的 AI Agent 桌面工作台。集成 Claw Doctor、OpenClaw、Hermes 等能力。",
+    "assistantIdentity": "Privix Community 内置的智能助手",
+    "injectPevcKnowledgeBase": false
+  },
+  "legal": {
+    "author": "Privix Community Contributors",
+    "copyrightOwner": "Privix Community Contributors",
+    "aboutNotice": "Privix Community 采用 Apache-2.0 协议开源;源自上游 ClawPanel 的对应代码保留原 MIT 许可声明。",
+    "commercialNotice": "",
+    "mitNotice": "保留上游 ClawPanel MIT License 信息。"
+  },
+  "assistantPreset": "default",
+  "requiresOpenclawSetup": true,
+  "enabledCapabilities": [
+    "assistant",
+    "settings",
+    "security",
+    "about",
+    "platform_dashboard",
+    "chat",
+    "services",
+    "logs",
+    "models",
+    "agents",
+    "gateway",
+    "channels",
+    "communication",
+    "memory",
+    "cron",
+    "usage",
+    "skills",
+    "system_diagnostics"
+  ],
+  "bundle": {
+    "identifier": "io.privix.community",
+    "author": "Privix Community Contributors",
+    "cargoAuthors": [
+      "Privix Community Contributors"
+    ],
+    "windowTitle": "Privix Community"
+  }
+}
