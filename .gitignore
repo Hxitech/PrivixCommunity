@@ -83,8 +83,14 @@ C:/
 # Claude 工作树（开发临时产物）
 .claude/worktrees/
 
+# Claude 开发者本机调试配置（含本机绝对路径，不入仓库）
+.claude/launch.json
+
 # 临时文件
 *.swp
 *.swo
 *~
 lu*.tmp
+
+# LibreOffice 锁文件
+.~lock.*

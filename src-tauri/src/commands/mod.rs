@@ -66,8 +66,7 @@ pub fn active_product_profile_id() -> &'static str {
 }
 
 /// 旧版 profile ID 列表,用于配置目录回退查找(兼容曾装过商业版的用户)
-const LEGACY_PROFILE_IDS: &[&str] =
-    &["prospectclaw", "invest_workbench", "local_qa_kb", "doc_sop"];
+const LEGACY_PROFILE_IDS: &[&str] = &["prospectclaw"];
 
 /// 获取 OpenClaw 配置目录（带缓存）。
 /// 优先使用面板配置中的 openclawDir，自定义目录不存在时回退默认 ~/.openclaw。
@@ -109,7 +108,37 @@ pub fn invalidate_openclaw_dir_cache() {
 }
 
 pub fn panel_profiles_dir() -> PathBuf {
-    default_openclaw_dir().join("privix-community")
+    default_openclaw_dir().join(DEFAULT_PRODUCT_PROFILE_ID)
+}
+
+/// 兼容迁移: ~/.openclaw/prospectclaw/ → ~/.openclaw/privix-community/
+/// 仅在旧目录存在且新目录不存在时迁移。优先 rename(原子),失败吞掉只打印(不阻塞启动)。
+pub fn migrate_legacy_profile_dir() -> std::io::Result<()> {
+    let base = default_openclaw_dir();
+    let old_dir = base.join(LEGACY_PROFILE_IDS[0]);
+    let new_dir = base.join(DEFAULT_PRODUCT_PROFILE_ID);
+
+    if old_dir.exists() && !new_dir.exists() {
+        match std::fs::rename(&old_dir, &new_dir) {
+            Ok(_) => {
+                eprintln!(
+                    "[migration] renamed {} -> {}",
+                    old_dir.display(),
+                    new_dir.display()
+                );
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!(
+                    "[migration] rename failed ({e}), skipping; app will use fresh {}",
+                    new_dir.display()
+                );
+                Err(e)
+            }
+        }
+    } else {
+        Ok(())
+    }
 }
 
 static PANEL_RUNTIME_DIR_CACHE: OnceLock<PathBuf> = OnceLock::new();

@@ -312,17 +312,6 @@ function renderOverview(page, services, mcpConfig, backups, config, agents, stat
           </div>
         </div>
 
-        <div class="overview-card" data-nav="/evoscientist">
-          <div class="overview-card-icon" style="color:#8b5cf6">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          </div>
-          <div class="overview-card-body">
-            <div class="overview-card-title">Prospect-Research</div>
-            <div class="overview-card-value" style="font-size:var(--font-size-sm)">${t('pages.dashboard.multi_agent_collab')}</div>
-            <div class="overview-card-meta">${t('pages.dashboard.prospect_research_meta')}</div>
-          </div>
-        </div>
-
         <div class="overview-card" data-nav="/clawswarm">
           <div class="overview-card-icon" style="color:#f59e0b">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><circle cx="12" cy="16" r="3"/><line x1="9.5" y1="8.5" x2="14.5" y2="8.5"/><line x1="8.5" y1="9.5" x2="10.5" y2="14"/><line x1="15.5" y1="9.5" x2="13.5" y2="14"/></svg>
@@ -562,20 +551,6 @@ function bindActions(page) {
       }
     } catch (e2) {
       toast(t('pages.dashboard.toast_open_control_failed', { error: String(e2.message || e2) }), 'error')
-    }
-  })
-
-  // 一键 AI 配置卡片 → 跳转到投资首页触发向导
-  page.addEventListener('click', (e) => {
-    const aiConfigCard = e.target.closest('[data-action="open-ai-config"]')
-    if (aiConfigCard) {
-      navigate('/invest-dashboard')
-      // 延迟触发向导（等页面渲染完成）
-      setTimeout(() => {
-        if (!page.isConnected) return
-        const wizardBtn = document.querySelector('[data-action="open-ai-config-wizard"]')
-        if (wizardBtn) wizardBtn.click()
-      }, 500)
     }
   })
 

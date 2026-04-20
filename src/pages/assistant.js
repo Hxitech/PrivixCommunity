@@ -30,11 +30,6 @@ import {
 } from '../lib/assistant-runtime.js'
 import { getActiveProductProfile, getProfileScopedPanelConfigPath } from '../lib/product-profile.js'
 
-// 社区版:evoscientist 治理视图 API 的空实现(被治理视图代码路径调用,但视图永远不激活)
-function getEvoscientistReadinessSnapshot() { return null }
-function onEvoscientistReadinessChange() { return () => {} }
-async function refreshEvoscientistReadiness() {}
-
 // ── 常量 ──
 const ASSISTANT_STORAGE_KEYS = migrateAssistantStorage()
 const STORAGE_KEY = ASSISTANT_STORAGE_KEYS.config
@@ -79,9 +74,6 @@ const DEFAULT_PROMPT_PRESET = ACTIVE_PRODUCT_PROFILE.assistantPreset || 'default
 function getAssistantPresets() {
   return {
     default: { label: t('pages.assistant.preset_default'), desc: t('pages.assistant.preset_default_desc') },
-    invest_workbench: { label: t('pages.assistant.preset_invest'), desc: t('pages.assistant.preset_invest_desc') },
-    local_qa: { label: t('pages.assistant.preset_local_qa'), desc: t('pages.assistant.preset_local_qa_desc') },
-    doc_sop: { label: t('pages.assistant.preset_doc_sop'), desc: t('pages.assistant.preset_doc_sop_desc') },
   }
 }
 
@@ -128,11 +120,7 @@ function apiKeyPlaceholder(apiType) {
 // ── 系统提示词 ──
 function getDefaultName() { return t('pages.assistant.default_name') }
 function getDefaultPersonality() {
-  return {
-    invest_workbench: t('pages.assistant.personality_invest'),
-    local_qa_kb: t('pages.assistant.personality_qa'),
-    doc_sop: t('pages.assistant.personality_sop'),
-  }[ACTIVE_PRODUCT_PROFILE.id] || t('pages.assistant.personality_default')
+  return t('pages.assistant.personality_default')
 }
 
 function getSystemPromptBase() {
@@ -160,33 +148,6 @@ function getSystemPromptBase() {
     '- 如果信息不足，明确列出需要补充的材料或参数',
     '- 回答保持专业、直接，不要编造不存在的数据或引用',
   ]
-
-  if (ACTIVE_PRODUCT_PROFILE.id === 'invest_workbench') {
-    lines.push(
-      '',
-      '## 当前产品壳：投资工作台',
-      '- 你帮助投资经理进行项目初评、立项报告、尽调分析与投决材料整理',
-      '- 你熟悉 PE/VC 投资全流程 SOP，善于从企业 BP、访谈纪要和行业资料中提炼结构化结论',
-      '- 进行投资动作建议时，要明确区分已知事实、推断结论和待验证风险',
-    )
-  } else if (ACTIVE_PRODUCT_PROFILE.id === 'local_qa_kb') {
-    lines.push(
-      '',
-      '## 当前产品壳：Agent 知识库 / 检索配置',
-      '- 你的核心任务是帮助用户整理知识源、检索规则、引用方式和可复用的知识库结构',
-      '- 回答时优先引用用户上传或配置的知识内容；若知识不足，要直接说明缺口',
-      '- 必要时先给出知识接入方案、缺失文件清单和引用边界，再进入问答输出',
-      '- 不要把投资行业知识、PE/VC 术语或任何特定机构品牌设定默认带入回答',
-    )
-  } else if (ACTIVE_PRODUCT_PROFILE.id === 'doc_sop') {
-    lines.push(
-      '',
-      '## 当前产品壳：Agent SOP / 文档配置',
-      '- 你的核心任务是帮助用户整理 Agent 规则、模板参数和结构化文档输出要求',
-      '- 生成内容时先确认目标对象、结构、语气、缺失信息和交付格式',
-      '- 当输入不足时，优先列出待补充字段，再给出可直接复用的文档或规则草稿',
-    )
-  }
 
   return lines.join('\n')
 }
@@ -273,7 +234,6 @@ const TOOL_DEFS = {
       },
     },
   ],
-  invest: [],
   webSearch: [
     {
       type: 'function',
@@ -788,16 +748,7 @@ function getBuiltinSkills() {
   ]
 }
 
-// 技能分类：投资顾问 vs IT魔法钳子
-const INVEST_SKILL_IDS = [
-  'generate-chuping', 'generate-lixiang', 'industry-analysis',
-  'initial-screening', 'visit-minutes', 'dd-report', 'ic-review-memo'
-]
-const DOC_SOP_SKILL_IDS = [
-  'agent-sop-blueprint',
-  'document-structure',
-  'debug-existing-agent',
-]
+// 技能分类:平台运维技能(社区版)
 const PLATFORM_SKILL_IDS = [
   'check-config',
   'diagnose-gateway',
@@ -807,13 +758,6 @@ const PLATFORM_SKILL_IDS = [
   'fix-common',
   'skills-manager',
 ]
-const KNOWLEDGE_SKILL_IDS = [
-  'document-structure',
-  'browse-dir',
-  'skills-manager',
-  'check-config',
-]
-function getInvestSkills() { return getBuiltinSkills().filter(s => INVEST_SKILL_IDS.includes(s.id)) }
 function getItSkills() { return getBuiltinSkills().filter(s => PLATFORM_SKILL_IDS.includes(s.id)) }
 
 // 记住欢迎页当前 tab
@@ -828,9 +772,7 @@ function currentPromptPreset() {
 }
 
 function getAllowedPresetKeys() {
-  if (ACTIVE_PRODUCT_PROFILE.id === 'doc_sop') return ['doc_sop']
-  if (ACTIVE_PRODUCT_PROFILE.id === 'local_qa_kb') return ['local_qa']
-  return ['default', 'invest_workbench']
+  return ['default']
 }
 
 function resolveAllowedPreset(value) {
@@ -851,49 +793,10 @@ function getSkillById(skillId) {
 }
 
 function getWelcomeSpec() {
-  if (ACTIVE_PRODUCT_PROFILE.id === 'doc_sop') {
-    return {
-      introHtml: '我是你的 Agent SOP 与文档配置助手。<br>可以帮你整理角色、流程、skills 边界，也能一起排查 OpenClaw 平台问题。',
-      defaultTab: 'sop',
-      groups: [
-        {
-          key: 'sop',
-          label: '🧩 Agent SOP',
-          skills: DOC_SOP_SKILL_IDS.map(getSkillById).filter(Boolean),
-        },
-        {
-          key: 'ops',
-          label: '🦞 平台运维',
-          skills: PLATFORM_SKILL_IDS.map(getSkillById).filter(Boolean),
-        },
-      ],
-    }
-  }
-
-  if (ACTIVE_PRODUCT_PROFILE.id === 'local_qa_kb') {
-    return {
-      introHtml: '我是你的 Agent 知识库与平台助手。<br>可以帮你整理知识源、检索规则、引用方式，也能排查 OpenClaw 平台配置。',
-      defaultTab: 'knowledge',
-      groups: [
-        {
-          key: 'knowledge',
-          label: '📚 知识库配置',
-          skills: KNOWLEDGE_SKILL_IDS.map(getSkillById).filter(Boolean),
-        },
-        {
-          key: 'ops',
-          label: '🦞 平台运维',
-          skills: PLATFORM_SKILL_IDS.map(getSkillById).filter(Boolean),
-        },
-      ],
-    }
-  }
-
   return {
-    introHtml: '我是你的投资 AI 顾问，也是 IT 魔法钳子。<br>点击下方技能卡片，AI 会自动调用工具完成任务。',
+    introHtml: '我是你的 IT 魔法钳子。<br>点击下方技能卡片,AI 会自动调用工具完成任务。',
     defaultTab: 'it',
     groups: [
-      { key: 'invest', label: t('pages.assistant.welcome_invest_tab'), skills: getInvestSkills() },
       { key: 'it', label: t('pages.assistant.welcome_it_tab'), skills: getItSkills() },
     ],
   }
@@ -1002,10 +905,6 @@ function getEnabledTools() {
 
   const t = _config.tools || {}
   const tools = [...TOOL_DEFS.system, ...TOOL_DEFS.process, ...TOOL_DEFS.interaction]
-
-  if (currentPromptPreset() === 'invest_workbench') {
-    tools.push(...TOOL_DEFS.invest)
-  }
 
   // 终端工具：受设置开关控制（优先级高于模式）
   if (t.terminal !== false) tools.push(...TOOL_DEFS.terminal)
@@ -1405,7 +1304,6 @@ let _errorContext = null // 待处理的错误上下文 { scene, title, hint, er
 let _soulCache = null // 灵魂移植缓存 { identity, soul, user, agents, tools, memory, recentMemories[] }
 // 社区版移除 governance(运维对象)视图
 let _assistantView = 'chat'
-let _evoscientistReadinessUnlisten = null
 let _governanceBusyAction = ''
 
 function currentAssistantView() {
@@ -1429,13 +1327,10 @@ function applyAssistantViewState(page = _page) {
   }
 }
 
-async function setAssistantView(view, { forceRefresh = true } = {}) {
-  _assistantView = view === 'governance' ? 'governance' : 'chat'
+async function setAssistantView(view) {
+  _assistantView = 'chat'
   localStorage.setItem(ASSISTANT_VIEW_KEY, _assistantView)
   applyAssistantViewState()
-  if (_assistantView === 'governance' && forceRefresh) {
-    await refreshEvoscientistReadiness({ force: true, quiet: true })
-  }
   renderSessionList()
   renderMessages()
 }
@@ -2800,7 +2695,7 @@ function formatGovernanceTime(value) {
 
 function renderGovernanceSidebar() {
   if (!_sessionListEl) return
-  const readiness = getEvoscientistReadinessSnapshot()
+  const readiness = null
   const badgeTone = readiness?.badgeTone ? ` ${readiness.badgeTone}` : ''
   _sessionListEl.innerHTML = `
     <div class="ast-governance-sidebar">
@@ -2824,7 +2719,7 @@ function renderGovernanceSidebar() {
 }
 
 function renderGovernanceView() {
-  const readiness = getEvoscientistReadinessSnapshot()
+  const readiness = null
   if (!readiness) {
     _messagesEl.innerHTML = `
       <div class="ast-governance-shell">
@@ -4283,11 +4178,7 @@ function showDebugModal(title, content) {
 }
 function getAssistantGuideHtml() {
   if (localStorage.getItem(AST_GUIDE_KEY)) return ''
-  const hintText = ACTIVE_PRODUCT_PROFILE.id === 'doc_sop'
-    ? '它更适合做 Agent SOP 整理、文档结构规划和平台排障，不等于你正在养的 OpenClaw Agent 本体。'
-    : ACTIVE_PRODUCT_PROFILE.id === 'local_qa_kb'
-      ? '它更适合做 Agent 知识库整理、引用式回答和平台排障，不等于你正在养的 OpenClaw Agent 本体。'
-      : '它更适合做投研分析、平台排障和灵魂导入，不等于你正在养的 OpenClaw Agent 本体。'
+  const hintText = '它更适合做平台排障、Agent 调试和灵魂导入,不等于你正在养的 OpenClaw Agent 本体。'
   return `
     <div class="ast-page-guide" id="ast-page-guide">
       <div class="ast-guide-badge">内置 AI</div>
@@ -4417,14 +4308,6 @@ export async function render() {
   if (_textareaCompositionCleanup) _textareaCompositionCleanup()
   _textareaComposition = createCompositionState()
   _textareaCompositionCleanup = bindCompositionState(_textarea, _textareaComposition)
-  if (_evoscientistReadinessUnlisten) _evoscientistReadinessUnlisten()
-  _evoscientistReadinessUnlisten = onEvoscientistReadinessChange(() => {
-    if (!_page) return
-    if (currentAssistantView() === 'governance') {
-      renderSessionList()
-      renderMessages()
-    }
-  })
   if (_runtimeViewId) detachRuntimeView(_runtimeSessionId, _runtimeViewId)
   _runtimeViewId = attachRuntimeView(_runtimeSessionId, {
     onSnapshot: () => {
@@ -4435,9 +4318,6 @@ export async function render() {
 
   // 渲染
   applyAssistantViewState(page)
-  if (currentAssistantView() === 'governance') {
-    void refreshEvoscientistReadiness({ force: true, quiet: true })
-  }
   renderSessionList()
   renderMessages()
   renderQueue()
@@ -4759,10 +4639,6 @@ export function cleanup() {
   stopStreamRefresh()
   clearPendingImages()
   _governanceBusyAction = ''
-  if (_evoscientistReadinessUnlisten) {
-    _evoscientistReadinessUnlisten()
-    _evoscientistReadinessUnlisten = null
-  }
   if (_runtimeSessionId && _runtimeViewId) {
     detachRuntimeView(_runtimeSessionId, _runtimeViewId)
     _runtimeViewId = null

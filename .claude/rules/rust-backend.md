@@ -34,8 +34,8 @@ super::enhanced_path()
 ## 配置目录
 
 - OpenClaw 配置: `~/.openclaw/openclaw.json`（由 `default_openclaw_dir()` 解析，支持旧环境变量兼容）
-- 面板配置: `~/.openclaw/prospectclaw/<profileId>/clawpanel.json`
-- 产品 Profile: 编译时由 `PROSPECTCLAW_PRODUCT_PROFILE` 决定，运行时由 `active_product_profile_id()` 返回
+- 面板配置: `~/.openclaw/privix-community/<profileId>/clawpanel.json`
+- 产品 Profile: 社区版固定为 `privix-community`，由 `active_product_profile_id()` 返回
 
 ## Rust 版本
 

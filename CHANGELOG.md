@@ -4,6 +4,14 @@
 
 `-ce.N` 后缀表示 Community Edition 的迭代号。
 
+## [2.0.0-ce.2] - 2026-04-20
+
+### Cleanup (audit D)
+- Remove residual invest_workbench / evoscientist / doc_sop / local_qa_kb dead code across 30+ files
+- Simplify quick-setup wizard from 4 steps to 2 steps (OpenClaw status + completion)
+- Remove /api license backend (commercial authorization server)
+- Fix deploy.sh URLs pointing to legacy repo
+
 ## [2.0.0-ce.1] — 2026-04-19
 
 Privix Community 首个独立开源发行版。从 Privix 内部版本 v1.6.0-fix1 拉出,以 Apache-2.0 开源,与商业版彻底切断。

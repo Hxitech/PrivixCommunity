@@ -385,8 +385,6 @@ export const api = {
     return open({ directory: true, multiple: false, title: title || '选择文件夹' })
   },
 
-  // EvoScientist/Prospect-Research — 社区版移除
-
   // Skills 管理（纯本地扫描 + SkillHub SDK）
   skillsList: (agentId) => invoke('skills_list', { agent_id: agentId || null }),
   skillsInfo: (name, agentId) => invoke('skills_info', { name, agent_id: agentId || null }),

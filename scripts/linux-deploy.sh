@@ -8,7 +8,7 @@ echo "=========================================="
 echo ""
 
 PANEL_PORT=1420
-REPO_URL="https://github.com/Hxitech/ProspectClaw.git"
+REPO_URL="https://github.com/privix-community/privix.git"
 NPM_REGISTRY="https://registry.npmmirror.com"
 
 # 检测权限模式

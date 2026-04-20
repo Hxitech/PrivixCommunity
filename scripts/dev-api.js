@@ -25,8 +25,17 @@ const GENERATED_PRODUCT_PROFILE_ID = (() => {
   }
 })()
 const OPENCLAW_DIR = process.env.OPENCLAW_HOME || path.join(homedir(), '.openclaw')
+// 优先读新变量 PRIVIX_PRODUCT_PROFILE;保留旧变量 PROSPECTCLAW_PRODUCT_PROFILE 作为 deprecation fallback
+function resolveProductProfileEnv() {
+  if (process.env.PRIVIX_PRODUCT_PROFILE) return process.env.PRIVIX_PRODUCT_PROFILE
+  if (process.env.PROSPECTCLAW_PRODUCT_PROFILE) {
+    console.warn('[deprecated] PROSPECTCLAW_PRODUCT_PROFILE is deprecated, use PRIVIX_PRODUCT_PROFILE')
+    return process.env.PROSPECTCLAW_PRODUCT_PROFILE
+  }
+  return null
+}
 const PRODUCT_PROFILE_ID = normalizeProductProfileId(
-  process.env.PROSPECTCLAW_PRODUCT_PROFILE
+  resolveProductProfileEnv()
     || GENERATED_PRODUCT_PROFILE_ID
     || getDefaultProductProfileId(),
 )
@@ -42,7 +51,7 @@ const isMac = process.platform === 'darwin'
 const isLinux = process.platform === 'linux'
 const SCOPES = ['operator.admin', 'operator.approvals', 'operator.pairing', 'operator.read', 'operator.write']
 const CLUSTER_TOKEN = 'clawpanel-cluster-secret-2026'
-const PANEL_PROFILES_DIR = path.join(OPENCLAW_DIR, 'privix-community')
+const PANEL_PROFILES_DIR = path.join(OPENCLAW_DIR, getDefaultProductProfileId())
 const PANEL_RUNTIME_DIR = path.join(PANEL_PROFILES_DIR, PRODUCT_PROFILE_ID)
 const LEGACY_PANEL_CONFIG_PATH = path.join(OPENCLAW_DIR, 'clawpanel.json')
 const LEGACY_PANEL_DATA_DIR = path.join(OPENCLAW_DIR, 'clawpanel')
@@ -5334,36 +5343,6 @@ const handlers = {
   hermes_set_gateway_url({ url } = {}) { return { success: true } },
   update_hermes() { return { success: true } },
   uninstall_hermes({ cleanConfig } = {}) { return { success: true } },
-
-  // === EvoScientist / Prospect-Research 管理(Web 模式桩) ===
-  // 注意:src/pages/evoscientist.js 有 `if (!IS_TAURI)` 硬编码短路,
-  // 这些 mock 在当前 Web 模式 UI 下不会被 evoscientist 页直接调用;
-  // 保留用于 ai-quick-config 等其他入口,以及未来 Web 模式解锁。
-  get_evoscientist_status() {
-    return {
-      supported: true,
-      installed: true,
-      bridgeRunning: true,
-      bridgeReady: true,
-      version: '0.4.2',
-      bridgePort: 8765,
-      bridgePid: 42931,
-      currentEnv: { name: 'default', provider: 'openai', model: 'gpt-4o', baseUrl: 'https://api.openai.com/v1' },
-      lastError: null,
-      logTail: [
-        '[info] bridge started on 127.0.0.1:8765',
-        '[info] scientist pool ready (3 workers)'
-      ]
-    }
-  },
-  list_evoscientist_sessions({ limit } = {}) {
-    const sessions = [
-      { id: 'sess_001', title: '半导体行业竞品矩阵分析', updated_at: '2026-04-12T09:30:00Z', scientist_count: 3, status: 'completed', message_count: 18 },
-      { id: 'sess_002', title: 'Series B 尽调材料审校', updated_at: '2026-04-11T14:22:00Z', scientist_count: 2, status: 'completed', message_count: 14 },
-      { id: 'sess_003', title: '北美 SaaS TAM 测算', updated_at: '2026-04-10T16:05:00Z', scientist_count: 4, status: 'running', message_count: 9 }
-    ]
-    return limit ? sessions.slice(0, limit) : sessions
-  },
 
   // 约定：list 类命令在目录/资源缺失时返回 [],detail/read 类命令在目标缺失时 throw——
   // 匹配前端 "空列表 = 无数据;详情报错 = 用户提示" 的消费模式

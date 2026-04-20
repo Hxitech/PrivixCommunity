@@ -2,39 +2,34 @@
 
 > v1.5.2 (2026-04-17) · 梳理 Privix 内部 4 个工作流/编排系统的职责边界、共享词汇、持久化现状，以及与 `~/Desktop/open-claude-code` 架构模式的对照。
 
-## 三套工作流系统 + 一套审批系统
+## 两套工作流系统 + 一套审批系统
 
-Privix 当前有 4 套面向不同问题域的 "工作流" 抽象：
+Privix 当前有 3 套面向不同问题域的 "工作流" 抽象:
 
 | 系统 | 目录 | 核心问题 | 驱动者 |
 |------|------|---------|--------|
 | **ClawSwarm 蜂群** | `src/lib/clawswarm-*.js` + `src/pages/clawswarm.js` | 多 Agent **并行 DAG** 一次性编排 | LLM 规划器拆解任务 → 分配到多个 Agent 同时跑 |
-| **SOP Engine** | `src/lib/sop-engine.js` + `sop-flow.js` + `src/pages/sop{,-invest}.js` | **顺序/DAG + 人审检查点** | 预置或 LLM 归纳出 SOP 模板，逐步推进 |
-| **EvoScientist** | `src/pages/evoscientist.js` + `src/lib/evoscientist-*.js` | **长跑 persona 驱动探索**（科研/案例式） | 单一 Agent 带长上下文，多 Tab UI 维护状态 |
-| **Workflows 审批**（不在本轮审计范围） | `src/pages/workflows.js` | 业务审批多阶段 + SLA（投资场景） | 人工决策 + 事件流 |
+| **SOP Engine** | `src/lib/sop-engine.js` + `sop-flow.js` + `src/pages/sop{,-invest}.js` | **顺序/DAG + 人审检查点** | 预置或 LLM 归纳出 SOP 模板,逐步推进 |
+| **Workflows 审批**(不在本轮审计范围) | `src/pages/workflows.js` | 业务审批多阶段 + SLA(投资场景) | 人工决策 + 事件流 |
 
 ### 决策树：什么时候用哪一套？
 
 ```
 新任务来了
   │
-  ├─ 需要多个 Agent 同时跑不同子任务，最后合并结果？
-  │   └─→ ClawSwarm（DAG + wave-parallel + orchestrator 决策）
+  ├─ 需要多个 Agent 同时跑不同子任务,最后合并结果?
+  │   └─→ ClawSwarm(DAG + wave-parallel + orchestrator 决策)
   │
-  ├─ 任务步骤有固定顺序/依赖，关键节点需要人审？
-  │   └─→ SOP（步骤 status: pending → ready → running → waiting_review → completed）
+  ├─ 任务步骤有固定顺序/依赖,关键节点需要人审?
+  │   └─→ SOP(步骤 status: pending → ready → running → waiting_review → completed)
   │
-  ├─ 需要一个"研究员/科学家"人格长时间跟进，带案例模板？
-  │   └─→ EvoScientist（persona + readiness + timeline）
-  │
-  └─ 业务流程审批（投资、合同）？
+  └─ 业务流程审批(投资、合同)?
       └─→ Workflows 审批页
 ```
 
-反过来说：
-- 不要用 ClawSwarm 做需要"一步一步确认"的顺序任务 — 它的调度器假设 wave 内可并行，orchestrator 主导决策。
-- 不要用 SOP 做"开放式探索" — SOP 预设步骤清单，不擅长动态 branching。
-- 不要用 EvoScientist 做短任务 — 它有 readiness 引导和 persona 状态管理，启动成本不低。
+反过来说:
+- 不要用 ClawSwarm 做需要"一步一步确认"的顺序任务 — 它的调度器假设 wave 内可并行,orchestrator 主导决策。
+- 不要用 SOP 做"开放式探索" — SOP 预设步骤清单,不擅长动态 branching。
 
 ---
 
@@ -75,7 +70,7 @@ Privix 当前有 4 套面向不同问题域的 "工作流" 抽象：
 
 ### 统一类型骨架
 
-[src/lib/task-descriptor.js](../src/lib/task-descriptor.js) 定义 `TaskDescriptor` JSDoc typedef，是跨系统的**共同词汇**（不是运行时抽象）。三个系统的实体（SwarmAgent / TaskStep / EvoScientist session）都可映射到这个骨架用于日志展示、状态持久化、未来可能的统一 UI 等场景。
+[src/lib/task-descriptor.js](../src/lib/task-descriptor.js) 定义 `TaskDescriptor` JSDoc typedef,是跨系统的**共同词汇**(不是运行时抽象)。两个系统的实体(SwarmAgent / TaskStep)都可映射到这个骨架用于日志展示、状态持久化、未来可能的统一 UI 等场景。
 
 ---
 
@@ -86,8 +81,7 @@ Privix 当前有 4 套面向不同问题域的 "工作流" 抽象：
 | 文件 | localStorage key | TODO 注释 |
 |------|-----------------|----------|
 | `clawswarm-state.js` | `clawswarm_tasks`, `clawswarm_config` | 无显式 TODO |
-| `sop-engine.js:75` | `sop_engine_plans`, `sop_patterns` | ✓ `// 任务计划暂存在 localStorage，未来后端 ready 后迁移到 API` |
-| `evoscientist-state.js` | 多个（persona / runtime / timeline） | 无显式 TODO |
+| `sop-engine.js:75` | `sop_engine_plans`, `sop_patterns` | ✓ `// 任务计划暂存在 localStorage,未来后端 ready 后迁移到 API` |
 
 ### 未来的 API seam
 
@@ -107,7 +101,7 @@ Privix 当前有 4 套面向不同问题域的 "工作流" 抽象：
 
 ## License 与模块关系（v1.5.2+）
 
-历史上 Privix 按 3 个产品身份发布（invest_workbench / local_qa_kb / doc_sop），由 license 下发的 `enabledModules` 控制模块激活。
+历史上 Privix 按多个产品身份发布,由 license 下发的 `enabledModules` 控制模块激活。
 
 **v1.2.2** 起统一为单一 Privix 身份 + 运行时模块激活（`src/lib/product-profile.js`）。
 
@@ -123,9 +117,9 @@ Privix 当前有 4 套面向不同问题域的 "工作流" 抽象：
 
 | 概念 | 来源 | 可能的 Privix 对应 |
 |------|------|------------------|
-| **Polymorphic Task Registry** | `src/tasks/` — 7 种 Task（LocalAgent / RemoteAgent / InProcessTeammate / DreamTask 等），共同 `{name, type, kill()}` 接口 | 未来若统一 ClawSwarm SwarmAgent + SOP TaskStep + EvoScientist session 到一层，参照此接口 |
+| **Polymorphic Task Registry** | `src/tasks/` — 7 种 Task(LocalAgent / RemoteAgent / InProcessTeammate / DreamTask 等),共同 `{name, type, kill()}` 接口 | 未来若统一 ClawSwarm SwarmAgent + SOP TaskStep 到一层,参照此接口 |
 | **Coordinator Mode** | `src/coordinator/coordinatorMode.ts` — 编译期 feature flag 切换"普通 Agent → 多 Agent 编排者" | Privix 可用 runtime 配置（非 Bun feature flag）实现类似切换 |
-| **Decoupled Teammate Identity** | `src/tasks/InProcessTeammateTask/types.ts` — TeammateIdentity 与运行时 context 解耦 | EvoScientist persona 可进一步拆成 identity + runtime 两层 |
+| **Decoupled Teammate Identity** | `src/tasks/InProcessTeammateTask/types.ts` — TeammateIdentity 与运行时 context 解耦 | Agent persona 可进一步拆成 identity + runtime 两层 |
 | **Dream Task** | `src/tasks/DreamTask/DreamTask.ts` — 后台内存整合 agent，以 pill UI 非阻塞展示 | Privix 的记忆/索引重建可作为"后台 task pill"呈现 |
 | **QueryEngine** | `src/QueryEngine.ts` — 单一入口组合 system prompt + coordinator context + thinking config + cost tracking | Hermes/OpenClaw 引擎可采用类似编排层 |
 

@@ -28,7 +28,6 @@ function getBreadcrumbs() {
     '/contacts': { section: t('comp.header.section_invest'), page: t('comp.header.page_contacts') },
     '/invest-docs': { section: t('comp.header.section_invest'), page: t('comp.header.page_invest_docs') },
     '/sop': { section: t('comp.header.section_invest'), page: t('comp.header.page_sop') },
-    '/invest-dashboard': { section: t('comp.header.section_invest'), page: t('comp.header.page_invest_dashboard') },
     '/scoring': { section: t('comp.header.section_invest'), page: t('comp.header.page_scoring') },
     '/workflows': { section: t('comp.header.section_invest'), page: t('comp.header.page_workflows') },
     '/audit': { section: t('comp.header.section_invest'), page: t('comp.header.page_audit') },
@@ -36,7 +35,6 @@ function getBreadcrumbs() {
     '/invest-repair': { section: t('comp.header.section_invest'), page: t('comp.header.page_invest_repair') },
     '/cron': { section: t('comp.header.section_system'), page: t('comp.header.page_cron') },
     '/usage': { section: t('comp.header.section_system'), page: t('comp.header.page_usage') },
-    '/evoscientist': { section: 'Prospect-Research', page: 'Prospect-Research' },
     '/skills': { section: t('comp.header.section_system'), page: t('comp.header.page_skills') },
     '/settings': { section: t('comp.header.section_system'), page: t('comp.header.page_settings') },
     '/chat-debug': { section: t('comp.header.section_system'), page: t('comp.header.page_chat_debug') },
@@ -61,15 +59,6 @@ function getBreadcrumbs() {
   return breadcrumbs
 }
 
-function resolveEvoscientistBreadcrumb(query = {}) {
-  const tab = String(query.tab || 'chat').trim()
-  const page = {
-    chat: t('comp.header.evo_tab_chat'),
-    settings: t('comp.header.evo_tab_settings'),
-  }[tab] || t('comp.header.evo_tab_chat')
-  return { section: 'Prospect-Research', page }
-}
-
 export function renderTopHeader(el) {
   updateBreadcrumb(el)
 }
@@ -78,9 +67,7 @@ export function updateBreadcrumb(el) {
   if (!el) return
   const routeState = getCurrentRouteState()
   const breadcrumbs = getBreadcrumbs()
-  const crumb = routeState.path === '/evoscientist'
-    ? resolveEvoscientistBreadcrumb(routeState.query)
-    : (breadcrumbs[routeState.path] || { section: '', page: routeState.path.replace('/', '') })
+  const crumb = breadcrumbs[routeState.path] || { section: '', page: routeState.path.replace('/', '') }
   const chipLabel = crumb.section || BRAND_NAME
   const contextLabel = crumb.section
     ? `${BRAND_NAME} · ${crumb.section}`

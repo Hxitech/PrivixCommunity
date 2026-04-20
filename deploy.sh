@@ -1,11 +1,11 @@
 #!/bin/bash
 # Privix Web 版一键部署脚本
 # 适用于 WSL / Docker / 远程服务器
-# 用法: curl -fsSL https://raw.githubusercontent.com/Hxitech/ProspectClaw/main/deploy.sh | bash
+# 用法: curl -fsSL https://raw.githubusercontent.com/privix-community/privix/main/deploy.sh | bash
 
 set -e
 
-REPO="Hxitech/ProspectClaw"
+REPO="privix-community/privix"
 INSTALL_DIR="$HOME/.clawpanel-web"
 PORT="${CLAWPANEL_PORT:-9099}"
 

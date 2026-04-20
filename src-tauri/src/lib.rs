@@ -58,6 +58,7 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            let _ = commands::migrate_legacy_profile_dir();
             service::start_backend_guardian(app.handle().clone());
             tray::setup_tray(app.handle())?;
             Ok(())
@@ -136,7 +137,6 @@ pub fn run() {
             memory::delete_memory_file,
             memory::export_memory_zip,
             // 扩展工具
-            // EvoScientist 独立智能体
             // Agent 管理
             agent::list_agents,
             agent::add_agent,

@@ -14,8 +14,8 @@ const generatedProductProfile = (() => {
     return null
   }
 })()
-// v1.2.2: 统一为 prospectclaw，不再根据环境变量切换 profile
-const appProductProfile = 'prospectclaw'
+// 社区版统一为单一 profile privix-community,不再根据环境变量切换
+const appProductProfile = 'privix-community'
 
 // 读取 Gateway 端口（启动时读取一次）
 let gatewayPort = 18789

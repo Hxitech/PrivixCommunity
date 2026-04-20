@@ -6,7 +6,7 @@
 const UNIFIED_ID = 'privix-community'
 
 export const PRODUCT_PROFILE_IDS = Object.freeze({
-  PROSPECTCLAW: UNIFIED_ID,
+  COMMUNITY: UNIFIED_ID,
 })
 
 export const MODULE_IDS = Object.freeze({
@@ -161,7 +161,7 @@ const UNIFIED_PROFILE = {
 }
 
 export const PRODUCT_PROFILES = Object.freeze({
-  [PRODUCT_PROFILE_IDS.PROSPECTCLAW]: UNIFIED_PROFILE,
+  [PRODUCT_PROFILE_IDS.COMMUNITY]: UNIFIED_PROFILE,
 })
 
 export function normalizeProductProfileId(_value) {

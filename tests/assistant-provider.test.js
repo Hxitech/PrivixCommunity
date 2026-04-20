@@ -7,7 +7,7 @@ import { getAssistantStorageKeys } from '../src/lib/assistant-storage.js'
 const originalLocalStorage = global.localStorage
 const originalFetch = global.fetch
 const originalAbortSignal = global.AbortSignal
-const ASSISTANT_STORAGE_KEYS = getAssistantStorageKeys('invest_workbench')
+const ASSISTANT_STORAGE_KEYS = getAssistantStorageKeys('privix-community')
 
 function createStorage() {
   const store = new Map()

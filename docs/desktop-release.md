@@ -2,8 +2,8 @@
 
 ## 当前口径（v1.4.2+）
 
-- 正式发版统一为单一 `Privix` 身份，不再默认切换 `invest_workbench` / `local_qa_kb` / `doc_sop`
-- Invest / Knowledge / SOP 现在是同一 App 内的行业模块，运行时按 license 激活
+- 正式发版统一为单一 `Privix` 身份
+- 社区版仅保留 base 模块,无 license 激活概念
 - `scripts/apply-product-profile.js`、`npm run profile:*`、`npm run release:desktop:all` 仅保留历史兼容，不再作为默认发版路径
 - macOS Apple Silicon 标准产物路径：`src-tauri/target/release/bundle/dmg/Privix_<version>_aarch64.dmg`
 - 如果用户说“发包到桌面”，默认在构建完成后把 DMG 额外复制到 `~/Desktop/`
@@ -37,5 +37,4 @@ cp src-tauri/target/release/bundle/dmg/Privix_1.4.5-fix2_aarch64.dmg ~/Desktop/
 
 ## 历史兼容说明
 
-- `release:desktop:all` 仍可用于旧三 profile 回归验证，但不应作为正式发版默认路径
-- `PROSPECTCLAW_PRODUCT_PROFILE`、`profile:invest`、`profile:qa`、`profile:sop` 仅用于兼容旧脚本或排查历史问题
+- `release:desktop:all` 仅保留历史兼容,不再作为正式发版默认路径

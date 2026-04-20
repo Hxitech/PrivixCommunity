@@ -14,7 +14,6 @@ export const HERMES_DIRECT_ROUTES = Object.freeze([
   '/about',
   '/logs',
   '/diagnose',
-  '/evoscientist',
   '/clawswarm',
   '/star-office',
   '/quick-setup',

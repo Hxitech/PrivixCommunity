@@ -16,7 +16,5 @@ paths: ["src/pages/channels.js", "src/pages/gateway.js", "src/pages/services.js"
 ## 我们独有的文件（无需考虑上游）
 
 - `src/pages/invest-*.js` — 投资域全部页面
-- `src/pages/evoscientist.js` — Prospect-Research 研究助手
 - `src/lib/product-profile.js` — 产品 Profile 系统
-- `src/lib/evoscientist-*.js` — Prospect-Research 相关库
 - `src/lib/openclaw-feature-gates.js` — 版本特性门控

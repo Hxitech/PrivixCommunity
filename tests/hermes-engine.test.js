@@ -13,7 +13,6 @@ after(() => {
 test('Hermes engine registers public routes that should open directly in Hermes mode', () => {
   const routes = hermesEngine.getRoutes().map(route => route.path)
 
-  assert.ok(routes.includes('/evoscientist'))
   assert.ok(routes.includes('/clawswarm'))
   assert.ok(routes.includes('/star-office'))
   assert.ok(routes.includes('/quick-setup'))
@@ -21,7 +20,7 @@ test('Hermes engine registers public routes that should open directly in Hermes 
   assert.ok(routes.includes('/diagnose'))
 })
 
-test('Hermes setup nav hides ProspectResearch until Hermes is ready', async () => {
+test('Hermes setup nav hides secondary routes until Hermes is ready', async () => {
   api.checkHermes = async () => ({ installed: false, configExists: false, gatewayRunning: false })
   await hermesEngine.detect()
 
@@ -32,5 +31,4 @@ test('Hermes setup nav hides ProspectResearch until Hermes is ready', async () =
   assert.ok(routes.includes('/assistant'))
   assert.ok(routes.includes('/settings'))
   assert.ok(routes.includes('/about'))
-  assert.equal(routes.includes('/evoscientist'), false)
 })

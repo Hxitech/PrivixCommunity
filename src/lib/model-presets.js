@@ -7,7 +7,7 @@ import { api } from './tauri-api.js'
 
 /**
  * 从 OpenClaw 配置读取模型列表和主模型
- * 供 assistant / clawswarm / evoscientist 页面使用
+ * 供 assistant 页面使用
  * @returns {{ models: Array<{provider: string, model: string, full: string}>, primary: string, providers: Object }}
  */
 export async function readOpenclawModels() {
@@ -76,14 +76,14 @@ export const API_TYPES = [
 
 // ── provider ↔ apiType 双向映射（ClawSwarm / 一键配置共用） ──
 
-/** EvoScientist provider 枚举 → LLM API 类型 */
+/** Provider 枚举 → LLM API 类型 */
 export function providerToApiType(provider) {
   if (provider === 'anthropic' || provider === 'custom-anthropic') return 'anthropic-messages'
   if (provider === 'google-genai') return 'google-gemini'
   return 'openai-completions'
 }
 
-/** LLM API 类型 → EvoScientist provider 枚举（baseUrl 用于区分 custom-openai） */
+/** LLM API 类型 → Provider 枚举（baseUrl 用于区分 custom-openai） */
 export function apiTypeToProvider(apiType, baseUrl) {
   if (apiType === 'anthropic-messages') return 'anthropic'
   if (apiType === 'google-gemini') return 'google-genai'

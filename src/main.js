@@ -78,7 +78,7 @@ async function checkAuth() {
 const PROFILE_HOME_ROUTE = getProfileHomeRoute()
 const REQUIRE_OPENCLAW_READY = requiresOpenclawSetup()
 const PANEL_CONFIG_HINT = getProfileScopedPanelConfigPath()
-const SETUP_SAFE_ROUTES = new Set(['/setup', '/assistant', '/evoscientist', '/settings', '/about', '/chat-debug'])
+const SETUP_SAFE_ROUTES = new Set(['/setup', '/assistant', '/settings', '/about', '/chat-debug'])
 const _logoSvg = `<div class="login-logo"><img src="${BRAND_LOGO_SRC}" alt="${BRAND_LOGO_ALT}" style="width:64px;height:64px;border-radius:14px;object-fit:contain"></div>`
 
 function isSafeRouteDuringActiveEngineSetup(path) {
