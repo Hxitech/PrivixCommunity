@@ -239,10 +239,6 @@ function getUnifiedSetupNavItems() {
   ]
 }
 
-// 社区版无模块锁定、无 invest/evo 状态徽标
-// eslint-disable-next-line no-unused-vars
-function _isPillarLocked() { return false }
-
 function getNavItemHash(item) {
   return buildRouteHash(item.route, item.query)
 }
@@ -374,8 +370,6 @@ export function renderSidebar(el) {
     for (let pi = 0; pi < navPillars.length; pi++) {
       const pillar = navPillars[pi]
       if (!pillar) continue
-      // license 锁定的主线完全隐藏
-      if (_isPillarLocked(pillar)) continue
 
       const isHermesPillar = pillar.id === 'hermes' && !isHermesMode
       const isLeafPillar = !pillar.children && pillar.route

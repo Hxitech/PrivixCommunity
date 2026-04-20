@@ -37,10 +37,6 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
-const PROJECT_REPO_URL = 'https://github.com/privix-community/privix'
-// eslint-disable-next-line no-unused-vars
-const PROJECT_RELEASES_URL = `${PROJECT_REPO_URL}/releases`
-
 export async function render() {
   const page = document.createElement('div')
   page.className = 'page'

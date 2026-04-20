@@ -43,8 +43,7 @@
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-shell": "^2.2.1",
     "docx": "^9.6.1",
-    "pptxgenjs": "^4.0.1",
-    "xlsx": "^0.18.5"
+    "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

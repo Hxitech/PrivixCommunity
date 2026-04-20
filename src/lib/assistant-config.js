@@ -1,15 +1,12 @@
 import { OPENCLAW_KB } from './openclaw-kb.js'
 import { KIMI_CODING_BASE_URL } from './model-presets.js'
 import { BRAND_NAME } from './brand.js'
-import { getActiveProductProfile } from './product-profile.js'
 import { migrateAssistantStorage } from './assistant-storage.js'
 
 const ASSISTANT_STORAGE_KEYS = migrateAssistantStorage()
 export const ASSISTANT_STORAGE_KEY = ASSISTANT_STORAGE_KEYS.config
 export const ASSISTANT_SESSIONS_KEY = ASSISTANT_STORAGE_KEYS.sessions
 export const DEFAULT_ASSISTANT_NAME = '钳子助手'
-// eslint-disable-next-line no-unused-vars
-const ACTIVE_PRODUCT_PROFILE = getActiveProductProfile()
 const DEFAULT_PROMPT_PRESET = 'default'
 export const DEFAULT_ASSISTANT_PERSONALITY = '专业、严谨、高效。善于提炼关键信息并给出结构化建议。'
 export const DEFAULT_ASSISTANT_MODE = 'execute'
@@ -116,9 +113,7 @@ function buildAssistantIdentity(config) {
   return lines.join('\n')
 }
 
-// eslint-disable-next-line no-unused-vars
 export function buildAssistantSystemPrompt(config, {
-  preset = 'default',
   toolDescriptions = [],
   extraInstructions = [],
   includeKnowledgeBase = true,

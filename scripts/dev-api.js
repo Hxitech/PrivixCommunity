@@ -12,15 +12,7 @@ import { fileURLToPath } from 'url'
 import net from 'net'
 import http from 'http'
 import crypto from 'crypto'
-import XLSX from 'xlsx'
 import * as skillhubSdk from './lib/skillhub-sdk.js'
-// 社区版:invest-db / invest-command-service / invest-workbench 已移除
-const investHandlers = {}
-const ensureInvestDb = () => {}
-const runInvestCommand = () => ({ error: 'invest commands removed in community edition' })
-const buildPoolLookupKey = () => ''
-const cleanupText = (s) => String(s || '')
-const inferDocumentCategory = () => 'unknown'
 import { getDefaultProductProfileId, normalizeProductProfileId } from '../src/lib/product-profile.js'
 const DOCKER_TASK_TIMEOUT_MS = 10 * 60 * 1000
 
@@ -55,7 +47,6 @@ const PANEL_RUNTIME_DIR = path.join(PANEL_PROFILES_DIR, PRODUCT_PROFILE_ID)
 const LEGACY_PANEL_CONFIG_PATH = path.join(OPENCLAW_DIR, 'clawpanel.json')
 const LEGACY_PANEL_DATA_DIR = path.join(OPENCLAW_DIR, 'clawpanel')
 const PANEL_CONFIG_PATH = path.join(PANEL_RUNTIME_DIR, 'clawpanel.json')
-const INVEST_DOCS_DIR = path.join(PANEL_RUNTIME_DIR, 'invest-docs')
 const DOCKER_NODES_PATH = path.join(PANEL_RUNTIME_DIR, 'docker-nodes.json')
 const INSTANCES_PATH = path.join(PANEL_RUNTIME_DIR, 'instances.json')
 const PANEL_AGENT_BACKUPS_DIR = path.join(PANEL_RUNTIME_DIR, 'agent-config-backups')
@@ -973,18 +964,6 @@ async function readMultipartForm(req) {
     }
   }
   return { fields, file }
-}
-
-function ensureInvestDocsDir() {
-  if (!fs.existsSync(INVEST_DOCS_DIR)) fs.mkdirSync(INVEST_DOCS_DIR, { recursive: true })
-  return INVEST_DOCS_DIR
-}
-
-function safeFileName(name) {
-  return String(name || 'document')
-    .replace(/[/\\?%*:|"<>]/g, '-')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function getUid() {
@@ -5265,115 +5244,6 @@ const handlers = {
     return true
   },
 
-  // === 投资工作台（Web only） ===
-
-  async invest_upload_document({ file, ...fields }) {
-    if (!file?.buffer?.length) throw new Error('未接收到上传文件')
-
-    const db = ensureInvestDb()
-    const poolItemId = cleanupText(fields.pool_item_id)
-    let dealId = cleanupText(fields.deal_id)
-    let companyId = cleanupText(fields.company_id)
-
-    if (poolItemId && (!dealId || !companyId)) {
-      const linked = db.prepare('SELECT linked_deal_id, linked_company_id FROM pool_items WHERE id = ?').get(poolItemId)
-      if (linked) {
-        if (!dealId) dealId = linked.linked_deal_id || ''
-        if (!companyId) companyId = linked.linked_company_id || ''
-      }
-    }
-
-    const category = cleanupText(fields.category) || inferDocumentCategory(file.originalName)
-    const filename = safeFileName(file.originalName)
-    const created = investHandlers.invest_create_document({
-      deal_id: dealId || null,
-      company_id: companyId || null,
-      pool_item_id: poolItemId || null,
-      filename,
-      category,
-      notes: cleanupText(fields.notes) || null,
-      original_name: file.originalName,
-      mime_type: file.mimeType,
-      size_bytes: file.size,
-    })
-
-    const docPath = path.join(ensureInvestDocsDir(), `${created.id}-${filename}`)
-    fs.writeFileSync(docPath, file.buffer)
-    investHandlers.invest_update_document({
-      id: created.id,
-      file_path: docPath,
-      category,
-      original_name: file.originalName,
-      mime_type: file.mimeType,
-      size_bytes: file.size,
-    })
-
-    return {
-      id: created.id,
-      filename,
-      original_name: file.originalName,
-      category,
-      file_path: docPath,
-      size_bytes: file.size,
-      mime_type: file.mimeType,
-    }
-  },
-
-  invest_backfill_pool_from_excel({ excel_path } = {}) {
-    const workbookPath = excel_path
-      ? path.resolve(process.cwd(), excel_path)
-      : path.join(__dev_dirname, '..', '素材', '远桥项目池整理.xlsx')
-
-    if (!fs.existsSync(workbookPath)) throw new Error(`Excel 文件不存在: ${workbookPath}`)
-
-    const db = ensureInvestDb()
-    const workbook = XLSX.readFile(workbookPath)
-    const poolItems = db.prepare(`
-      SELECT p.id, p.name, p.raw_contact_text, pc.name as category_name
-      FROM pool_items p
-      LEFT JOIN pool_categories pc ON pc.id = p.category_id
-    `).all()
-    const lookup = new Map(poolItems.map(item => [buildPoolLookupKey(item.category_name || '', item.name), item]))
-    const batchId = `backfill-${Date.now()}`
-    const updatedIds = []
-    const matchedIds = new Set()
-    let matched = 0
-
-    for (const sheetName of workbook.SheetNames) {
-      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' })
-      for (const row of rows) {
-        const headers = Object.keys(row)
-        const nameKey = headers.find(key => ['项目', '项目名', '公司', '公司名', '项目名称'].includes(String(key).trim()))
-        const contactKey = headers.find(key => String(key).trim() === '联系方式')
-        if (!nameKey || !contactKey) continue
-
-        const name = cleanupText(row[nameKey])
-        const rawContactText = cleanupText(row[contactKey])
-        if (!name || !rawContactText) continue
-
-        const target = lookup.get(buildPoolLookupKey(sheetName, name))
-        if (!target) continue
-        matched++
-        matchedIds.add(target.id)
-
-        if (cleanupText(target.raw_contact_text) === rawContactText) continue
-        db.prepare('UPDATE pool_items SET raw_contact_text = ?, import_batch_id = ?, updated_at = ? WHERE id = ?')
-          .run(rawContactText, batchId, new Date().toISOString(), target.id)
-        updatedIds.push(target.id)
-      }
-    }
-
-    if (matchedIds.size > 0) {
-      investHandlers.invest_refresh_pool_suggestions({ pool_item_ids: [...matchedIds] })
-    }
-
-    return { matched, updated: updatedIds.length, batch_id: batchId }
-  },
-
-  invest_cli(request = {}) {
-    return runInvestCommand(request)
-  },
-
   // === 访问密码认证 ===
   auth_check() {
     const pw = getAccessPassword()
@@ -5390,21 +5260,15 @@ const handlers = {
     return true
   },
 
-  check_panel_update() { return { latest: null, url: 'https://github.com/Hxitech/ProspectClaw/releases' } },
+  check_panel_update() { return { latest: null, url: 'https://github.com/privix-community/privix/releases' } },
 
-  // 前端热更新 — 社区版无远程更新清单,永远返回无更新
   async check_frontend_update() {
-    const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-    const currentVersion = pkg.version
-    return { currentVersion, latestVersion: currentVersion, hasUpdate: false, compatible: true, updateReady: false, manifest: { version: currentVersion } }
+    return { currentVersion: PANEL_VERSION, latestVersion: PANEL_VERSION, hasUpdate: false, compatible: true, updateReady: false, manifest: { version: PANEL_VERSION } }
   },
   download_frontend_update() { return { success: true, files: 12, path: FRONTEND_UPDATE_DIR } },
   rollback_frontend_update() { return { success: true } },
   get_update_status() {
-    const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-    return { currentVersion: pkg.version, updateReady: false, updateVersion: '', updateDir: FRONTEND_UPDATE_DIR }
+    return { currentVersion: PANEL_VERSION, updateReady: false, updateVersion: '', updateDir: FRONTEND_UPDATE_DIR }
   },
   write_env_file({ path: p, config }) {
     const expanded = p.startsWith('~/') ? path.join(homedir(), p.slice(2)) : p
@@ -5932,7 +5796,7 @@ async function _apiMiddleware(req, res, next) {
     return
   }
 
-  const handler = handlers[cmd] || investHandlers[cmd]
+  const handler = handlers[cmd]
 
   if (!handler) {
     res.statusCode = 404

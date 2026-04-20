@@ -3100,121 +3100,6 @@ fn convert_messages_to_gemini(messages: &[serde_json::Value]) -> serde_json::Val
     json!(contents)
 }
 
-// 社区版:ClawSwarm 直连 LLM 已移除
-#[allow(dead_code)]
-async fn _swarm_chat_complete_removed(
-    messages: Vec<serde_json::Value>,
-    model: String,
-    api_type: Option<String>,
-    api_key: String,
-    base_url: String,
-    max_tokens: Option<u32>,
-) -> Result<serde_json::Value, String> {
-    let api_type = normalize_model_api_type(api_type.as_deref().unwrap_or("openai-completions"));
-    let base = normalize_base_url_for_api(&base_url, api_type);
-    let max_tokens = max_tokens.unwrap_or(4096);
-
-    let client =
-        crate::commands::build_http_client_no_proxy(std::time::Duration::from_secs(120), None)
-            .map_err(|e| format!("创建 HTTP 客户端失败: {e}"))?;
-
-    let resp = match api_type {
-        "anthropic-messages" => {
-            // 分离 system 消息
-            let mut system_text = String::new();
-            let mut chat_messages: Vec<serde_json::Value> = Vec::new();
-            for msg in &messages {
-                let role = msg.get("role").and_then(|r| r.as_str()).unwrap_or("user");
-                if role == "system" {
-                    if !system_text.is_empty() {
-                        system_text.push_str("\n\n");
-                    }
-                    system_text.push_str(msg.get("content").and_then(|c| c.as_str()).unwrap_or(""));
-                } else {
-                    chat_messages.push(msg.clone());
-                }
-            }
-
-            let url = format!("{}/messages", base);
-            let mut body = json!({
-                "model": model,
-                "messages": chat_messages,
-                "max_tokens": max_tokens,
-            });
-            if !system_text.is_empty() {
-                body["system"] = json!(system_text);
-            }
-
-            let req = client
-                .post(&url)
-                .header("anthropic-version", "2023-06-01")
-                .json(&body);
-            add_anthropic_auth(req, &api_key, &base).send()
-        }
-        "google-gemini" => {
-            let contents = convert_messages_to_gemini(&messages);
-            let url = format!("{}/models/{}:generateContent?key={}", base, model, api_key);
-            let body = json!({
-                "contents": contents,
-                "generationConfig": {
-                    "maxOutputTokens": max_tokens,
-                }
-            });
-            client.post(&url).json(&body).send()
-        }
-        _ => {
-            // OpenAI 兼容格式（含自定义 provider）
-            let url = format!("{}/chat/completions", base);
-            let body = json!({
-                "model": model,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "stream": false
-            });
-            let mut req = client.post(&url).json(&body);
-            if !api_key.is_empty() {
-                req = req.header("Authorization", format!("Bearer {api_key}"));
-            }
-            req.send()
-        }
-    }
-    .await
-    .map_err(|e| {
-        if e.is_timeout() {
-            "请求超时 (120s)，请检查网络或尝试更短的提示".to_string()
-        } else if e.is_connect() {
-            format!("连接失败: {e}")
-        } else {
-            format!("请求失败: {e}")
-        }
-    })?;
-
-    let status = resp.status();
-    let text = resp.text().await.unwrap_or_default();
-
-    if !status.is_success() {
-        let msg = extract_error_message(&text, status);
-        return Err(format!("LLM 请求失败 ({}): {}", status.as_u16(), msg));
-    }
-
-    // 解析响应 JSON
-    let parsed: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| format!("解析响应失败: {e}"))?;
-
-    let content =
-        extract_llm_content(&parsed).ok_or_else(|| "无法从 LLM 响应中提取文本内容".to_string())?;
-
-    let (input_tokens, output_tokens) = extract_llm_usage(&parsed);
-
-    Ok(json!({
-        "content": content,
-        "usage": {
-            "input": input_tokens,
-            "output": output_tokens,
-        },
-        "model": model,
-    }))
-}
 
 /// 获取服务商的远程模型列表（调用 /models 接口）
 #[tauri::command]
@@ -3432,8 +3317,8 @@ pub async fn check_panel_update() -> Result<Value, String> {
 
     // 优先从当前仓库检查发布版本
     let sources = [(
-        "https://api.github.com/repos/Hxitech/ProspectClaw/releases/latest",
-        "https://github.com/Hxitech/ProspectClaw/releases",
+        "https://api.github.com/repos/privix-community/privix/releases/latest",
+        "https://github.com/privix-community/privix/releases",
         "github",
     )];
 

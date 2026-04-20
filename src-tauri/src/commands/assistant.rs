@@ -6,9 +6,6 @@ use base64::{engine::general_purpose, Engine as _};
 #[allow(unused_imports)]
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
-use std::process::Stdio;
-use tauri::Manager;
-use tokio::io::AsyncWriteExt;
 
 /// 审计日志：记录 AI 助手的敏感操作（exec / read / write）
 fn audit_log(action: &str, detail: &str) {
@@ -44,24 +41,6 @@ fn normalize_image_id(id: &str) -> Result<String, String> {
         return Err("图片 ID 只能包含字母、数字、连字符和下划线".to_string());
     }
     Ok(trimmed.to_string())
-}
-
-fn resolve_invest_cli_script(app: &tauri::AppHandle) -> Option<PathBuf> {
-    let source_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("scripts")
-        .join("invest-cli.js");
-    if source_path.is_file() {
-        return Some(source_path);
-    }
-
-    app.path()
-        .resolve(
-            "scripts/invest-cli.js",
-            tauri::path::BaseDirectory::Resource,
-        )
-        .ok()
-        .filter(|path| path.is_file())
 }
 
 /// 确保数据目录及子目录存在，返回目录路径
@@ -195,84 +174,6 @@ mod tests {
     }
 }
 
-// 社区版:invest_cli 已移除
-#[allow(dead_code)]
-async fn _invest_cli_removed(
-    app: tauri::AppHandle,
-    request: serde_json::Value,
-) -> Result<serde_json::Value, String> {
-    let script_path = resolve_invest_cli_script(&app)
-        .ok_or_else(|| "未找到 invest-cli.js，当前运行环境不支持 invest_cli".to_string())?;
-    let work_dir = script_path
-        .parent()
-        .and_then(|dir| dir.parent())
-        .map(PathBuf::from)
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
-    let request_json =
-        serde_json::to_string(&request).map_err(|e| format!("序列化 invest_cli 请求失败: {e}"))?;
-
-    let mut command = tokio::process::Command::new("node");
-    command
-        .arg(&script_path)
-        .current_dir(&work_dir)
-        .env("PATH", super::enhanced_path())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
-
-    #[cfg(target_os = "windows")]
-    {
-        command.creation_flags(0x08000000);
-    }
-
-    let mut child = command
-        .spawn()
-        .map_err(|e| format!("启动 invest_cli 失败: {e}"))?;
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(request_json.as_bytes())
-            .await
-            .map_err(|e| format!("写入 invest_cli 请求失败: {e}"))?;
-        stdin
-            .write_all(b"\n")
-            .await
-            .map_err(|e| format!("写入 invest_cli 请求失败: {e}"))?;
-    }
-
-    let output = child
-        .wait_with_output()
-        .await
-        .map_err(|e| format!("等待 invest_cli 结果失败: {e}"))?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    let parsed = stdout
-        .lines()
-        .rev()
-        .find_map(|line| serde_json::from_str::<serde_json::Value>(line).ok());
-
-    if let Some(json) = parsed {
-        return Ok(json);
-    }
-
-    if output.status.success() {
-        return Err(if stdout.is_empty() {
-            "invest_cli 未返回可解析的 JSON".to_string()
-        } else {
-            format!("invest_cli 返回了无法解析的输出: {}", stdout)
-        });
-    }
-
-    Err(if stderr.is_empty() {
-        format!(
-            "invest_cli 执行失败（退出码: {}）",
-            output.status.code().unwrap_or(-1)
-        )
-    } else {
-        stderr
-    })
-}
 
 // ── AI 助手工具 ──
 

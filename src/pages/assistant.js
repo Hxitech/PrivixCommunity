@@ -30,9 +30,7 @@ import {
 } from '../lib/assistant-runtime.js'
 import { getActiveProductProfile, getProfileScopedPanelConfigPath } from '../lib/product-profile.js'
 
-// 社区版:evoscientist 治理视图相关桩函数
-// eslint-disable-next-line no-unused-vars
-function applyEvoscientistStatus() {}
+// 社区版:evoscientist 治理视图 API 的空实现(被治理视图代码路径调用,但视图永远不激活)
 function getEvoscientistReadinessSnapshot() { return null }
 function onEvoscientistReadinessChange() { return () => {} }
 async function refreshEvoscientistReadiness() {}
