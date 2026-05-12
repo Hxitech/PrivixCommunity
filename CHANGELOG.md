@@ -37,11 +37,23 @@
 
 - **escHtml 属性转义 XSS 修复**(同步自 invest `71df25e`):channels.js / services.js 原本地 `escHtml` 仅转义 `&<>` 三字符,在 `data-key="${...}"` / `title="${...}"` 等属性场景下不转义引号会造成 XSS 风险。统一改为 `src/lib/escape.js` 的 `escapeHtml`(覆盖 5 字符,与 mcp.js / agents.js / knowledge.js 等已有调用方一致)。
 
+### 新增 — Module A 插件冲突主动检测(同步自 invest `cdda719` 摘取)
+
+- **`src/lib/openclaw-plugin-doctor.js`** — audit/repair pattern,识别 6 个 legacy → official 映射(`openclaw-lark` → `@openclaw/feishu` 等)。导出 `runPluginDoctor()` / `auditPluginConflicts()` / `repairPluginConflicts()`。
+- **Plugin Hub 顶部黄色 banner** — render() 后台异步扫,有冲突列出 legacy/official/action,一键修复(串行 install official + toggle legacy false),修复后自动 restartGateway。
+
+### 新增 — Module D Gateway Guardian 状态暴露(同步自 invest `cdda719` 摘取)
+
+- **`src-tauri/src/commands/service.rs`** — `GuardianRuntimeState` + `GuardianStatus` 加 `last_config_error: Option<String>` 字段;guardian_tick 触发 `give_up` 时把 `check_gateway_err_log_for_config_error` 的结果写入 state;Gateway 恢复 running 时清空;`reset_guardian` 清空。
+- **`src/components/guardian-banner.js`** — 根据 `lastConfigError` 关键字分发 5 种根因 tip(EADDRINUSE / EACCES / SyntaxError / Cannot find module / generic),提供"手动重启"(走 `reset_guardian` + `restart_gateway`)/ 跳诊断页 / 暂时隐藏 按钮。监听后端 `guardian-event` 事件自动刷新。
+- **Dashboard 顶部挂载** — page-header 后插 banner host,cleanup 时正确卸载 Tauri event listener。
+
 ### 同步追踪
 
 - 阶段 1(关键安全 + 基础设施):`66c0db4`(部分,版本 pin)、`d191810`(完整)
-- 阶段 2(Hermes 三大运维页):`74a7f08` 摘 channels/services/config 部分(跳过 models.js / dashboard usage card / hermes_usage_today)、`71df25e` 摘 escapeHtml 安全修复 + config.js lineHeight 修复
-- 下一批:`cdda719` 渠道治理 + `18cf7cd` provider OAuth + `7b3a1d9` feature gates 等
+- 阶段 2(Hermes 三大运维页):`74a7f08` 摘 channels/services/config 部分、`71df25e` 摘 escapeHtml 安全修复
+- 阶段 3.1(Plugin doctor + Guardian banner):`cdda719` 摘 Module A + Module D
+- 下一批:`cdda719` Module B/C/E(workspace permissions / sandbox card / health overview)+ `18cf7cd` provider OAuth + `7b3a1d9` feature gates 等
 
 ## [2.1.0-ce.1] - 2026-04-20
 

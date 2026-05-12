@@ -76,6 +76,9 @@ struct GuardianRuntimeState {
     manual_hold: bool,
     pause_reason: Option<String>,
     give_up: bool,
+    /// 触发 give_up 时识别到的配置错误一行(来自 check_gateway_err_log_for_config_error)
+    /// 用于前端 banner 给出根因提示(EADDRINUSE/EACCES 等)
+    last_config_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -86,6 +89,8 @@ pub struct GuardianStatus {
     pub manual_hold: bool,
     pub give_up: bool,
     pub auto_restart_count: u32,
+    /// give_up=true 时携带最近一次识别到的配置错误行(EADDRINUSE/EACCES/SyntaxError 等)
+    pub last_config_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -333,6 +338,7 @@ fn guardian_snapshot() -> GuardianStatus {
         manual_hold: state.manual_hold,
         give_up: state.give_up,
         auto_restart_count: state.auto_restart_count,
+        last_config_error: state.last_config_error.clone(),
     }
 }
 
@@ -480,6 +486,7 @@ async fn guardian_tick(app: &tauri::AppHandle) {
                     state.give_up = false;
                     state.auto_restart_count = 0;
                     state.last_restart_time = None;
+                    state.last_config_error = None; // 恢复运行后清根因,避免 banner 残留
                     guardian_log("检测到 Gateway 已重新运行，后端守护已退出手动停机/放弃状态");
                 }
                 state.running_since = Some(now);
@@ -537,12 +544,13 @@ async fn guardian_tick(app: &tauri::AppHandle) {
             guardian_log(&format!(
                 "检测到 Gateway 配置错误，不计入自动重启次数: {config_err}"
             ));
-            // 回退重启计数
+            // 回退重启计数 + 把根因写入 state(供前端 banner 展示)
             let mut state = guardian_state().lock().unwrap();
             if state.auto_restart_count > 0 {
                 state.auto_restart_count -= 1;
             }
             state.give_up = true; // 配置错误不应盲目重试
+            state.last_config_error = Some(config_err.clone());
             drop(state);
             let payload = GuardianEventPayload {
                 kind: "config_error".into(),
@@ -627,6 +635,7 @@ pub fn reset_guardian() -> Result<(), String> {
     state.manual_hold = false;
     state.auto_restart_count = 0;
     state.last_restart_time = None;
+    state.last_config_error = None;
     guardian_log("用户手动重置了后端守护状态");
     Ok(())
 }

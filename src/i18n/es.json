@@ -4209,7 +4209,19 @@
       "toggleSuccess": "插件状态已更新",
       "toggleFailed": "插件状态切换失败",
       "showDetail": "查看详情",
-      "hideDetail": "收起详情"
+      "hideDetail": "收起详情",
+      "conflict": {
+        "title": "检测到 {{count}} 个旧版插件冲突",
+        "subtitle": "OpenClaw 2026.5.3 起官方插件迁移到 @openclaw/* npm。旧插件与官方版同时启用会让 channel 注册失败。",
+        "action_migrate": "迁移到官方版",
+        "action_disable": "禁用旧版",
+        "btn_fix_all": "一键修复全部",
+        "btn_dismiss": "稍后处理",
+        "fixing": "修复中...",
+        "fix_ok": "已修复 {{count}} 个冲突,正在重启 Gateway",
+        "fix_partial": "已处理 {{count}} 个,部分失败",
+        "fix_failed": "修复失败"
+      }
     },
     "sop_invest": {
       "page_title": "SOP 执行中心",
@@ -5303,6 +5315,22 @@
       "apply_failed": "写入失败: {error}",
       "hermes_unavailable": "Hermes Agent 不可用: {error}",
       "empty_reply": "LLM 回复为空"
+    },
+    "guardian_banner": {
+      "title": "Gateway 自动守护已暂停",
+      "restart_count": "已尝试重启 {{count}} 次后给弃",
+      "btn_manual_restart": "手动重启",
+      "btn_diagnose": "诊断 Gateway",
+      "btn_dismiss": "关闭",
+      "restart_ok": "已手动重启 Gateway",
+      "restart_failed": "重启失败",
+      "tip": {
+        "eaddrinuse": "端口被占用。可能是另一个 OpenClaw 实例或外部进程。终端运行 `lsof -i :18789` 查看占用进程。",
+        "eacces": "文件权限不足。多半是 ~/.openclaw 目录所有权异常,试试 Channel 页的\"健康检查\"按钮一键诊断。",
+        "syntax": "OpenClaw 配置文件语法错误。运行 `openclaw doctor --fix` 自动修复,或在 ~/.openclaw/openclaw.json 检查 JSON 语法。",
+        "module": "OpenClaw 缺少必要 Node 模块。试 Plugin Hub 的\"一键修复\"按钮重装依赖。",
+        "generic": "请查看 ~/.openclaw/logs/gateway.err.log 获取详细错误,或点\"诊断 Gateway\"按钮做完整连通性检查。"
+      }
     }
   },
   "_meta": {
