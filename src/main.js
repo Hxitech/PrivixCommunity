@@ -439,6 +439,30 @@ window.__clawpanel_show_login = window.__privix_community_show_login
 const sidebar = document.getElementById('sidebar')
 const content = document.getElementById('content')
 
+// OAuth provider doctor — 24h 节流避免每次冷启动都 reload Gateway
+// 同步自 invest 18cf7cd:OpenClaw 5.4+ *-portal OAuth provider 与 API Key sibling 共存,
+// fallback chain 全在挂掉的 OAuth 上 → Telegram bot 失效
+const PROVIDER_DOCTOR_THROTTLE_KEY = 'privix_oauth_doctor_last_run'
+const PROVIDER_DOCTOR_THROTTLE_MS = 24 * 60 * 60 * 1000
+
+async function runProviderDoctorThrottled() {
+  if (!isOpenclawReady()) return
+  let lastRun = 0
+  try { lastRun = parseInt(localStorage.getItem(PROVIDER_DOCTOR_THROTTLE_KEY) || '0', 10) || 0 } catch {}
+  if (Date.now() - lastRun <= PROVIDER_DOCTOR_THROTTLE_MS) return
+  try {
+    const { runProviderDoctor } = await import('./lib/openclaw-provider-doctor.js')
+    const result = await runProviderDoctor()
+    try { localStorage.setItem(PROVIDER_DOCTOR_THROTTLE_KEY, String(Date.now())) } catch {}
+    if (result?.repaired) {
+      const { toast } = await import('./components/toast.js')
+      toast(t('main.toast_oauth_provider_repaired'), 'info')
+    }
+  } catch (err) {
+    console.warn('[provider-doctor] failed:', err)
+  }
+}
+
 async function boot() {
   enableCommunityModules()
 
@@ -606,6 +630,9 @@ async function boot() {
 
     // 挂载常驻帮助 FAB
     mountHelpFab()
+
+    // OAuth provider doctor — boot 后台跑(节流,无副作用时无感)
+    runProviderDoctorThrottled().catch(() => {})
 
     // 首次进入时显示欢迎弹窗（仅新用户）
     initWelcome({

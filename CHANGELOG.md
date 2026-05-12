@@ -48,12 +48,19 @@
 - **`src/components/guardian-banner.js`** — 根据 `lastConfigError` 关键字分发 5 种根因 tip(EADDRINUSE / EACCES / SyntaxError / Cannot find module / generic),提供"手动重启"(走 `reset_guardian` + `restart_gateway`)/ 跳诊断页 / 暂时隐藏 按钮。监听后端 `guardian-event` 事件自动刷新。
 - **Dashboard 顶部挂载** — page-header 后插 banner host,cleanup 时正确卸载 Tauri event listener。
 
+### 新增 — OAuth Provider Doctor(同步自 invest `18cf7cd` Bug 1 摘取)
+
+- **`src/lib/openclaw-provider-doctor.js`** — 修复 OpenClaw 5.4+ 自动注入的 `*-portal` OAuth provider 与 API Key sibling 共存时,fallback chain 全在挂掉的 OAuth 上导致 Telegram bot 失效的问题。audit/repair 模式:`auditModelDefaults()` 检测 primary/fallbacks 是否指向未认证 OAuth provider → `repairModelDefaults()` 切到 API Key sibling + 清 OAuth fallbacks + disable 残缺 OAuth provider node → write + reload Gateway。
+- **`src/main.js` boot hook** — 24h localStorage 节流执行(`privix_oauth_doctor_last_run`),avoid 每次冷启动都 reload Gateway。修复后 toast 提示。
+- 已知 OAuth provider 映射:`minimax-portal` → `minimax`、`kimi-coding-portal` → `kimi-coding`、`moonshot-portal` → `moonshot`。
+
 ### 同步追踪
 
 - 阶段 1(关键安全 + 基础设施):`66c0db4`(部分,版本 pin)、`d191810`(完整)
 - 阶段 2(Hermes 三大运维页):`74a7f08` 摘 channels/services/config 部分、`71df25e` 摘 escapeHtml 安全修复
 - 阶段 3.1(Plugin doctor + Guardian banner):`cdda719` 摘 Module A + Module D
-- 下一批:`cdda719` Module B/C/E(workspace permissions / sandbox card / health overview)+ `18cf7cd` provider OAuth + `7b3a1d9` feature gates 等
+- 阶段 3.2(OAuth provider doctor):`18cf7cd` 摘 Bug 1(provider-doctor + main.js boot hook)
+- 下一批:`cdda719` Module B/C/E、`18cf7cd` Bug 2/3/4(重命名 / 多模态聊天 / version-migration)、`7b3a1d9` feature gates 等
 
 ## [2.1.0-ce.1] - 2026-04-20
 

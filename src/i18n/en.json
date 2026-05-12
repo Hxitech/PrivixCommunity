@@ -4908,7 +4908,8 @@
     "version_available": "Privix v{version} available",
     "download_from_website": "Download from Website",
     "download_from_github": "Download from GitHub",
-    "dismiss_version": "Dismiss this version"
+    "dismiss_version": "Dismiss this version",
+    "toast_oauth_provider_repaired": "AI provider config auto-repaired (cleared OAuth provider residue)"
   },
   "ai_quick_config": {
     "system_assistant": "Claw Doctor",

@@ -5199,7 +5199,8 @@
     "version_available": "Privix v{version} 可用",
     "download_from_website": "前往官网下载",
     "download_from_github": "GitHub 下载",
-    "dismiss_version": "忽略此版本"
+    "dismiss_version": "忽略此版本",
+    "toast_oauth_provider_repaired": "已自动修复 AI Provider 配置（清理了未完成 OAuth 的 Provider 残留）"
   },
   "ai_quick_config": {
     "system_assistant": "钳子医生",
