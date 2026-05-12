@@ -3714,7 +3714,41 @@
       "memoryLoading": "Loading...",
       "memoryEmpty": "No content",
       "memoryPlaceholder": "Write in Markdown format...",
-      "memoryUnsaved": "Unsaved changes. Leave anyway?"
+      "memoryUnsaved": "Unsaved changes. Leave anyway?",
+      "channelsHeaderHint": "Manage 19 Hermes messaging platforms. Configure required environment variables in .env or via hermes setup before enabling.",
+      "channelsLoadError": "Failed to load channels",
+      "channelsBadgeNoConfig": "No config",
+      "channelsBadgeConfigured": "Configured",
+      "channelsBadgeMissing": "{count} missing",
+      "channelsEnvPresent": "Present in .env",
+      "channelsEnvAbsent": "Not configured",
+      "channelsLockedHint": "System-level, cannot disable",
+      "channelsBtnEditYaml": "Advanced",
+      "channelsHintAdvanced": "Advanced settings (tokens / extra fields) — click Advanced to jump to the YAML editor, or edit .env directly.",
+      "channelsNeedEnv": "Please configure in .env first: {vars}",
+      "channelsToastEnabled": "{name} enabled, Gateway will restart",
+      "channelsToastDisabled": "{name} disabled, Gateway will restart",
+      "channelsToastSaveFailed": "Save failed: {name}",
+      "servicesHeaderHint": "Hermes runtime subsystems overview. Click to manage each.",
+      "servicesLoadError": "Failed to load services",
+      "servicesGateway": "Gateway Process",
+      "servicesGatewayDesc": "Main process — LLM calls, tool execution, channel routing",
+      "servicesApiServer": "API Server",
+      "servicesApiServerDesc": "HTTP /v1/runs endpoint (required for Privix ↔ Hermes communication)",
+      "servicesCron": "Cron Jobs",
+      "servicesCronDesc": "Hermes built-in cron scheduler for timed agent runs",
+      "servicesChannels": "Messaging Channels",
+      "servicesChannelsDesc": "Enabled messaging platforms (Telegram / Discord / Slack etc.)",
+      "servicesEnabled": "Enabled",
+      "servicesDisabled": "Disabled",
+      "servicesChannelsEnabledN": "{count} enabled",
+      "servicesOpenDashboard": "Open Dashboard",
+      "servicesOpenConfig": "Open YAML Config",
+      "servicesOpenCron": "Manage Cron",
+      "servicesOpenChannels": "Manage Channels",
+      "servicesCopy": "Copy",
+      "servicesCopied": "Copied",
+      "servicesShowCurl": "Show curl example"
     },
     "quick_setup": {
       "step1_title": "OpenClaw Status",
@@ -5270,5 +5304,10 @@
       "hermes_unavailable": "Hermes Agent unavailable: {error}",
       "empty_reply": "Empty LLM reply"
     }
+  },
+  "comp_toast": {
+    "copy_error": "Copy",
+    "copied": "Copied",
+    "copy_failed": "Copy failed"
   }
 }

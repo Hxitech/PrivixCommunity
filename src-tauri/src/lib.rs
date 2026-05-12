@@ -238,6 +238,8 @@ pub fn run() {
             hermes::hermes_skill_detail,
             hermes::hermes_memory_read,
             hermes::hermes_memory_write,
+            hermes::hermes_list_channels,
+            hermes::hermes_set_channel_enabled,
         ])
         .build(tauri::generate_context!())
         .expect("启动 Privix 失败")

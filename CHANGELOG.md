@@ -25,10 +25,23 @@
 
 - **`enhanced_path` 三平台补齐 cargo/go/deno/.local/bin**(同步 invest `d191810`):Tauri 子进程现在能在 PATH 中找到 `~/.cargo/bin`、`~/go/bin`、`~/.deno/bin`(三平台)以及 macOS 的 `~/.local/bin`(uv/pipx 装的 Python AI CLI)。修复"用户 shell 跑 OK、Privix 内 command not found"的诊断盲区,影响所有用 Rust/Go/Deno/uv 装的外部 MCP server 与 CLI 工具。
 
+### 新增 — Hermes 三大运维页落地(对应 UPSTREAM.md 第 5 项 ✅ 完成)
+
+- **`/h/channels`**:19 个 messaging platform 启停管理。卡片显示 required/missing env、enable toggle(api_server/cli 锁定)、跳转 YAML 配置。新增 RPC `hermes_list_channels` / `hermes_set_channel_enabled` + 通用化 `check_platform_enabled` / `patch_yaml_set_platform_enabled`。
+- **`/h/services`**:4 服务卡(Gateway / API Server / Cron / Channels)+ 状态徽标 + 跳转 CTA。Gateway 运行 + api_server 启用时展开 API Server 卡片:一键复制 endpoint URL + 折叠 curl 示例。
+- **`/h/config`**:`~/.hermes/config.yaml` 编辑器。textarea + 加载/保存/重启 Gateway,支持 `?focus=key` 查询参数自动滚动到目标顶层节。
+- 配套新 lib:`gateway-restart-queue.js`(防抖串行重启队列,同步上游 v0.14.0)、`async-button.js`(防双击 + loading 态)、`error-report.js`(统一错误上报)。
+- i18n 11 locale 新增 ~34 个 channels*/services* key + 3 个 comp_toast key(复制错误按钮)。
+
+### 安全修复
+
+- **escHtml 属性转义 XSS 修复**(同步自 invest `71df25e`):channels.js / services.js 原本地 `escHtml` 仅转义 `&<>` 三字符,在 `data-key="${...}"` / `title="${...}"` 等属性场景下不转义引号会造成 XSS 风险。统一改为 `src/lib/escape.js` 的 `escapeHtml`(覆盖 5 字符,与 mcp.js / agents.js / knowledge.js 等已有调用方一致)。
+
 ### 同步追踪
 
-- 已同步:`66c0db4`(部分:仅版本 pin,大部 v1.7~v1.10 累积 Hermes 改动留待后续批次)、`d191810`(完整)
-- UPSTREAM.md 第 5 项 "Hermes 页面补全" — 部分进展,Hermes 引擎核心 URL 已对齐到 v2026.5.7,三大运维页(channels/services/config)留待下一批次
+- 阶段 1(关键安全 + 基础设施):`66c0db4`(部分,版本 pin)、`d191810`(完整)
+- 阶段 2(Hermes 三大运维页):`74a7f08` 摘 channels/services/config 部分(跳过 models.js / dashboard usage card / hermes_usage_today)、`71df25e` 摘 escapeHtml 安全修复 + config.js lineHeight 修复
+- 下一批:`cdda719` 渠道治理 + `18cf7cd` provider OAuth + `7b3a1d9` feature gates 等
 
 ## [2.1.0-ce.1] - 2026-04-20
 

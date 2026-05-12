@@ -4005,7 +4005,41 @@
       "memoryLoading": "加载中...",
       "memoryEmpty": "暂无内容",
       "memoryPlaceholder": "使用 Markdown 格式编写...",
-      "memoryUnsaved": "有未保存的更改,确定离开?"
+      "memoryUnsaved": "有未保存的更改,确定离开?",
+      "channelsHeaderHint": "管理 Hermes 19 个 messaging platform。启用前请确保已配置必填环境变量(在 .env 或 hermes setup 中)。",
+      "channelsLoadError": "加载渠道列表失败",
+      "channelsBadgeNoConfig": "无需配置",
+      "channelsBadgeConfigured": "已配置",
+      "channelsBadgeMissing": "缺 {count} 项",
+      "channelsEnvPresent": "已在 .env 中",
+      "channelsEnvAbsent": "未配置",
+      "channelsLockedHint": "系统级,不可禁用",
+      "channelsBtnEditYaml": "高级配置",
+      "channelsHintAdvanced": "高级配置(token / extra 字段)请通过「高级配置」按钮跳转 YAML 编辑器,或直接编辑 .env 文件。",
+      "channelsNeedEnv": "请先在 .env 配置:{vars}",
+      "channelsToastEnabled": "已启用 {name},Gateway 即将重启",
+      "channelsToastDisabled": "已禁用 {name},Gateway 即将重启",
+      "channelsToastSaveFailed": "保存失败:{name}",
+      "servicesHeaderHint": "Hermes 运行时关键子系统总览。点击进入对应管理页。",
+      "servicesLoadError": "加载服务状态失败",
+      "servicesGateway": "Gateway 进程",
+      "servicesGatewayDesc": "主进程,负责 LLM 调用 + tool execution + channel 路由",
+      "servicesApiServer": "API Server",
+      "servicesApiServerDesc": "HTTP /v1/runs 端点(Privix 与 Hermes 通信的必需通道)",
+      "servicesCron": "定时任务",
+      "servicesCronDesc": "Hermes 内置 cron scheduler,负责定时唤醒 agent",
+      "servicesChannels": "消息渠道",
+      "servicesChannelsDesc": "已启用的 messaging platform(Telegram / Discord / Slack 等)",
+      "servicesEnabled": "已启用",
+      "servicesDisabled": "未启用",
+      "servicesChannelsEnabledN": "{count} 个已启用",
+      "servicesOpenDashboard": "查看仪表盘",
+      "servicesOpenConfig": "打开 YAML 配置",
+      "servicesOpenCron": "管理定时任务",
+      "servicesOpenChannels": "管理消息渠道",
+      "servicesCopy": "复制",
+      "servicesCopied": "已复制",
+      "servicesShowCurl": "查看 curl 示例"
     },
     "quick_setup": {
       "step1_title": "OpenClaw 状态",
@@ -5274,5 +5308,10 @@
   "_meta": {
     "status": "in-progress",
     "note": "Partial translation (1112/2362 keys). Full translation planned for v1.2.6."
+  },
+  "comp_toast": {
+    "copy_error": "Copiar",
+    "copied": "Copiado",
+    "copy_failed": "Error al copiar"
   }
 }
