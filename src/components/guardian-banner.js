@@ -18,6 +18,8 @@
 import { api } from '../lib/tauri-api.js'
 import { t } from '../lib/i18n.js'
 import { toast } from './toast.js'
+import { escapeHtml } from '../lib/escape.js'
+import { navigate } from '../router.js'
 
 const BANNER_CLASS = 'guardian-banner'
 
@@ -32,14 +34,6 @@ async function tauriListen(event, cb) {
     } catch { return null }
   }
   return _listenFn(event, cb)
-}
-
-function escHtml(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
 }
 
 /**
@@ -84,10 +78,10 @@ function renderBanner(status) {
   wrap.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:16px">⚠️</span>
-      <strong style="font-size:14px">${escHtml(title)}</strong>
+      <strong style="font-size:14px">${escapeHtml(title)}</strong>
     </div>
-    ${errLine ? `<code style="font-size:12px;background:rgba(0,0,0,0.04);padding:6px 8px;border-radius:6px;word-break:break-all">${escHtml(errLine)}</code>` : ''}
-    <div style="font-size:13px;line-height:1.5">${escHtml(t(tipKey))}</div>
+    ${errLine ? `<code style="font-size:12px;background:rgba(0,0,0,0.04);padding:6px 8px;border-radius:6px;word-break:break-all">${escapeHtml(errLine)}</code>` : ''}
+    <div style="font-size:13px;line-height:1.5">${escapeHtml(t(tipKey))}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
       <button class="btn btn-pill-filled btn-sm" data-action="manual-restart">${t('components.guardian_banner.btn_manual_restart')}</button>
       <button class="btn btn-pill-outline btn-sm" data-action="open-diagnose">${t('components.guardian_banner.btn_diagnose')}</button>
@@ -147,10 +141,7 @@ export function mountGuardianBanner(host, opts = {}) {
             if (btn) { btn.disabled = false; btn.textContent = t('components.guardian_banner.btn_manual_restart') }
           }
         } else if (action === 'open-diagnose') {
-          // 跳转到诊断页(通过 hash router)
-          if (location && typeof location.hash !== 'undefined') {
-            location.hash = '#/diagnose'
-          }
+          navigate('/diagnose')
         }
       })
       if (bannerEl?.isConnected) {

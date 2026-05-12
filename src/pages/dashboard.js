@@ -56,7 +56,13 @@ export async function render() {
   // 异步加载数据
   loadDashboardData(page)
 
-  // Module D: Guardian banner — give_up 时显示根因 + 手动重启按钮
+  // Module D: Guardian banner — give_up 时显示根因 + 手动重启按钮。
+  // 同一会话内可能多次 render(切回 dashboard),先清上一轮 unmounters 再挂新的,
+  // 避免 cleanup 时清的是旧实例、留下当前实例的 listener。
+  while (_guardianBannerUnmounters.length) {
+    const fn = _guardianBannerUnmounters.pop()
+    try { fn?.() } catch {}
+  }
   const guardianHost = page.querySelector('#dashboard-guardian-banner-host')
   if (guardianHost) {
     import('../components/guardian-banner.js').then(mod => {

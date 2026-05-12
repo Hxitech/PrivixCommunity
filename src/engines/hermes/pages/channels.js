@@ -64,11 +64,14 @@ function renderList(el, data) {
 function renderCard(ch) {
   const required = (ch.required_env || []).length
   const missing = (ch.missing_env || []).length
-  const cfgBadge = required === 0
-    ? `<span class="hm-ch-badge ok">${t('pages.engine.channelsBadgeNoConfig')}</span>`
-    : missing === 0
-      ? `<span class="hm-ch-badge ok">✓ ${t('pages.engine.channelsBadgeConfigured')}</span>`
-      : `<span class="hm-ch-badge warn">${t('pages.engine.channelsBadgeMissing', { count: missing })}</span>`
+  let cfgBadge
+  if (required === 0) {
+    cfgBadge = `<span class="hm-ch-badge ok">${t('pages.engine.channelsBadgeNoConfig')}</span>`
+  } else if (missing === 0) {
+    cfgBadge = `<span class="hm-ch-badge ok">✓ ${t('pages.engine.channelsBadgeConfigured')}</span>`
+  } else {
+    cfgBadge = `<span class="hm-ch-badge warn">${t('pages.engine.channelsBadgeMissing', { count: missing })}</span>`
+  }
   const enabledClass = ch.enabled ? 'on' : 'off'
   const isLocked = ch.key === 'api_server' || ch.key === 'cli'
   return `

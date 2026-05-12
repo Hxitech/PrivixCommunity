@@ -8,6 +8,7 @@ import { t } from '../lib/i18n.js'
 import { openAIDrawerWithError } from '../components/ai-drawer.js'
 import { icon } from '../lib/icons.js'
 import { runPluginDoctor, repairPluginConflicts } from '../lib/openclaw-plugin-doctor.js'
+import { escapeHtml as esc } from '../lib/escape.js'
 
 // 插件/渠道图标 — Apple 线条 SVG id(替代 emoji)
 const PLUGIN_ICONS = {
@@ -19,8 +20,6 @@ const PLUGIN_ICONS = {
 
 let _allPlugins = []
 let _searchQuery = ''
-
-function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') }
 
 export async function render() {
   const page = document.createElement('div')
