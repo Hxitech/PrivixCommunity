@@ -7,6 +7,8 @@ import { navigate } from '../router.js'
 import { t } from '../lib/i18n.js'
 import { openAIDrawerWithError } from '../components/ai-drawer.js'
 import { icon } from '../lib/icons.js'
+import { runPluginDoctor, repairPluginConflicts } from '../lib/openclaw-plugin-doctor.js'
+import { escapeHtml as esc } from '../lib/escape.js'
 
 // 插件/渠道图标 — Apple 线条 SVG id(替代 emoji)
 const PLUGIN_ICONS = {
@@ -18,8 +20,6 @@ const PLUGIN_ICONS = {
 
 let _allPlugins = []
 let _searchQuery = ''
-
-function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') }
 
 export async function render() {
   const page = document.createElement('div')
@@ -47,6 +47,7 @@ export async function render() {
       </div>
     </div>
     <div id="ph-install-msg" style="display:none;margin-bottom:var(--space-md)"></div>
+    <div id="ph-conflict-banner" style="display:none;margin-bottom:var(--space-md)"></div>
     <div id="ph-list">
       <div class="stat-card loading-placeholder" style="height:200px"></div>
     </div>
@@ -94,7 +95,66 @@ export async function render() {
   })
 
   setTimeout(() => loadPlugins(page), 0)
+  // Module A: 后台异步跑 plugin 冲突检测,完成后渲染 banner(不阻塞 render)
+  setTimeout(() => loadConflictBanner(page), 0)
   return page
+}
+
+/** 渲染 legacy/official 插件冲突 banner — 进 Plugin Hub 时主动检查 */
+async function loadConflictBanner(page) {
+  const host = page.querySelector('#ph-conflict-banner')
+  if (!host) return
+  const audit = await runPluginDoctor()
+  if (!audit?.needsFix) {
+    host.style.display = 'none'
+    host.innerHTML = ''
+    return
+  }
+  const items = audit.conflicts.map(c => {
+    const actionLabel = c.action === 'migrate' ? t('pages.plugin_hub.conflict.action_migrate') : t('pages.plugin_hub.conflict.action_disable')
+    return `<li style="margin:4px 0">
+      <code>${esc(c.legacy)}</code> → <code>${esc(c.official)}</code>
+      <span style="color:var(--text-tertiary,#9ca3af);font-size:12px;margin-left:6px">(${esc(c.channel)} · ${esc(actionLabel)})</span>
+    </li>`
+  }).join('')
+  host.style.display = 'block'
+  host.innerHTML = `
+    <div style="background:var(--warning-bg,#fffbeb);border:1px solid var(--warning-border,#fcd34d);color:var(--warning,#92400e);padding:12px 16px;border-radius:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:16px">⚠️</span>
+        <strong style="font-size:14px">${t('pages.plugin_hub.conflict.title', { count: audit.conflicts.length })}</strong>
+      </div>
+      <div style="font-size:13px;line-height:1.5;margin-bottom:6px">${t('pages.plugin_hub.conflict.subtitle')}</div>
+      <ul style="margin:6px 0;padding-left:20px;font-size:13px">${items}</ul>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-pill-filled btn-sm" id="ph-conflict-fix">${t('pages.plugin_hub.conflict.btn_fix_all')}</button>
+        <button class="btn btn-pill-outline btn-sm" id="ph-conflict-dismiss">${t('pages.plugin_hub.conflict.btn_dismiss')}</button>
+      </div>
+    </div>
+  `
+  host.querySelector('#ph-conflict-dismiss').onclick = () => { host.style.display = 'none' }
+  host.querySelector('#ph-conflict-fix').onclick = async () => {
+    const btn = host.querySelector('#ph-conflict-fix')
+    btn.disabled = true
+    btn.textContent = t('pages.plugin_hub.conflict.fixing')
+    try {
+      const result = await repairPluginConflicts(audit)
+      if (result.errors.length) {
+        const errSummary = result.errors.slice(0, 3).map(e => `${e.legacy}: ${e.error}`).join('; ')
+        toast(`${t('pages.plugin_hub.conflict.fix_partial', { count: result.count })}: ${errSummary}`, 'warning')
+      } else {
+        toast(t('pages.plugin_hub.conflict.fix_ok', { count: result.count }), 'success')
+      }
+      try { await api.restartGateway() } catch {}
+      await loadPlugins(page)
+      await loadConflictBanner(page) // 重新检测,正常情况会消失
+    } catch (err) {
+      toast(`${t('pages.plugin_hub.conflict.fix_failed')}: ${err?.message || err}`, 'error')
+    } finally {
+      btn.disabled = false
+      btn.textContent = t('pages.plugin_hub.conflict.btn_fix_all')
+    }
+  }
 }
 
 async function handleInstall(page) {

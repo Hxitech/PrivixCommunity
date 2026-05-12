@@ -559,6 +559,11 @@ fn build_enhanced_path() -> String {
             format!("{}/.nodenv/shims", home.display()),
             format!("{}/n/bin", home.display()),
             format!("{}/.npm-global/bin", home.display()),
+            // 其它语言工具链（uv/pipx 落在 .local/bin；cargo/go/deno 装的 CLI）
+            format!("{}/.local/bin", home.display()),
+            format!("{}/.cargo/bin", home.display()),
+            format!("{}/go/bin", home.display()),
+            format!("{}/.deno/bin", home.display()),
         ];
         // NPM_CONFIG_PREFIX: 用户通过 npm config set prefix 自定义的全局安装路径
         if let Ok(prefix) = std::env::var("NPM_CONFIG_PREFIX") {
@@ -630,6 +635,10 @@ fn build_enhanced_path() -> String {
             format!("{}/.nodenv/shims", home.display()),
             format!("{}/n/bin", home.display()),
             format!("{}/.npm-global/bin", home.display()),
+            // 其它语言工具链（cargo/go/deno 装的 CLI；uv/pipx 已在 .local/bin）
+            format!("{}/.cargo/bin", home.display()),
+            format!("{}/go/bin", home.display()),
+            format!("{}/.deno/bin", home.display()),
         ];
         // NPM_CONFIG_PREFIX: 用户通过 npm config set prefix 自定义的全局安装路径
         if let Ok(prefix) = std::env::var("NPM_CONFIG_PREFIX") {
@@ -749,6 +758,10 @@ fn build_enhanced_path() -> String {
             }
         }
         extra.push(format!(r"{}\.volta\bin", home.display()));
+        // 其它语言工具链（cargo/go/deno 装的 CLI）
+        extra.push(format!(r"{}\.cargo\bin", home.display()));
+        extra.push(format!(r"{}\go\bin", home.display()));
+        extra.push(format!(r"{}\.deno\bin", home.display()));
         // standalone 安装目录（集中管理，避免多处硬编码）
         for sa_dir in config::all_standalone_dirs() {
             extra.push(sa_dir.to_string_lossy().into_owned());

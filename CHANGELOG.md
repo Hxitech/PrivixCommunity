@@ -4,6 +4,64 @@
 
 `-ce.N` 后缀表示 Community Edition 的迭代号。
 
+## [Unreleased] — sync/invest-2026-05
+
+从商业版 ClawPanelInvest(v1.10.7)同步通用 fix。本批仅包含**关键安全升级 + 基础设施修复**,功能性同步(Hermes 三大运维页、渠道治理 UX、provider OAuth 等)将分批次进行。
+
+### ⚠ 破坏性变更
+
+- **Hermes Agent 升级到 0.13.0**(Tenacity Release,release tag `v2026.5.7`):8 个 P0 安全漏洞修复 + 默认开启 redaction + multi-agent Kanban + `/goal` 命令。**升级后用户需手动更新 `~/.hermes/config.yaml` 中部分 platform 的 env var 名称**(panel 这一侧不维护 platform env 映射表,完全透明转发用户配置)。env var 重命名映射:
+  - `bluebubbles.HOST` → `SERVER_URL`
+  - `email.USER` → `ADDRESS`
+  - `homeassistant.URL` / `TOKEN` → `HASS_URL` / `HASS_TOKEN`
+  - `dingtalk.APP_KEY` / `SECRET` → `CLIENT_ID` / `SECRET`
+  - `signal.PHONE_NUMBER` → `ACCOUNT`
+  - `whatsapp` 删除 `API_TOKEN`(改用外部 bridge)
+  - `matrix` 删除 `USER`(从 access token 推断)
+  - yuanbao 默认 emoji 💬 → 🤖
+- 同时引入 GitHub URL 版本 pin(`@v2026.5.7`),取代之前裸 main 分支安装。CE 用户现在能精确锁定 Hermes 版本,避免随上游 main 漂移。
+
+### 修复
+
+- **`enhanced_path` 三平台补齐 cargo/go/deno/.local/bin**(同步 invest `d191810`):Tauri 子进程现在能在 PATH 中找到 `~/.cargo/bin`、`~/go/bin`、`~/.deno/bin`(三平台)以及 macOS 的 `~/.local/bin`(uv/pipx 装的 Python AI CLI)。修复"用户 shell 跑 OK、Privix 内 command not found"的诊断盲区,影响所有用 Rust/Go/Deno/uv 装的外部 MCP server 与 CLI 工具。
+
+### 新增 — Hermes 三大运维页落地(对应 UPSTREAM.md 第 5 项 ✅ 完成)
+
+- **`/h/channels`**:19 个 messaging platform 启停管理。卡片显示 required/missing env、enable toggle(api_server/cli 锁定)、跳转 YAML 配置。新增 RPC `hermes_list_channels` / `hermes_set_channel_enabled` + 通用化 `check_platform_enabled` / `patch_yaml_set_platform_enabled`。
+- **`/h/services`**:4 服务卡(Gateway / API Server / Cron / Channels)+ 状态徽标 + 跳转 CTA。Gateway 运行 + api_server 启用时展开 API Server 卡片:一键复制 endpoint URL + 折叠 curl 示例。
+- **`/h/config`**:`~/.hermes/config.yaml` 编辑器。textarea + 加载/保存/重启 Gateway,支持 `?focus=key` 查询参数自动滚动到目标顶层节。
+- 配套新 lib:`gateway-restart-queue.js`(防抖串行重启队列,同步上游 v0.14.0)、`async-button.js`(防双击 + loading 态)、`error-report.js`(统一错误上报)。
+- i18n 11 locale 新增 ~34 个 channels*/services* key + 3 个 comp_toast key(复制错误按钮)。
+
+### 安全修复
+
+- **escHtml 属性转义 XSS 修复**(同步自 invest `71df25e`):channels.js / services.js 原本地 `escHtml` 仅转义 `&<>` 三字符,在 `data-key="${...}"` / `title="${...}"` 等属性场景下不转义引号会造成 XSS 风险。统一改为 `src/lib/escape.js` 的 `escapeHtml`(覆盖 5 字符,与 mcp.js / agents.js / knowledge.js 等已有调用方一致)。
+
+### 新增 — Module A 插件冲突主动检测(同步自 invest `cdda719` 摘取)
+
+- **`src/lib/openclaw-plugin-doctor.js`** — audit/repair pattern,识别 6 个 legacy → official 映射(`openclaw-lark` → `@openclaw/feishu` 等)。导出 `runPluginDoctor()` / `auditPluginConflicts()` / `repairPluginConflicts()`。
+- **Plugin Hub 顶部黄色 banner** — render() 后台异步扫,有冲突列出 legacy/official/action,一键修复(串行 install official + toggle legacy false),修复后自动 restartGateway。
+
+### 新增 — Module D Gateway Guardian 状态暴露(同步自 invest `cdda719` 摘取)
+
+- **`src-tauri/src/commands/service.rs`** — `GuardianRuntimeState` + `GuardianStatus` 加 `last_config_error: Option<String>` 字段;guardian_tick 触发 `give_up` 时把 `check_gateway_err_log_for_config_error` 的结果写入 state;Gateway 恢复 running 时清空;`reset_guardian` 清空。
+- **`src/components/guardian-banner.js`** — 根据 `lastConfigError` 关键字分发 5 种根因 tip(EADDRINUSE / EACCES / SyntaxError / Cannot find module / generic),提供"手动重启"(走 `reset_guardian` + `restart_gateway`)/ 跳诊断页 / 暂时隐藏 按钮。监听后端 `guardian-event` 事件自动刷新。
+- **Dashboard 顶部挂载** — page-header 后插 banner host,cleanup 时正确卸载 Tauri event listener。
+
+### 新增 — OAuth Provider Doctor(同步自 invest `18cf7cd` Bug 1 摘取)
+
+- **`src/lib/openclaw-provider-doctor.js`** — 修复 OpenClaw 5.4+ 自动注入的 `*-portal` OAuth provider 与 API Key sibling 共存时,fallback chain 全在挂掉的 OAuth 上导致 Telegram bot 失效的问题。audit/repair 模式:`auditModelDefaults()` 检测 primary/fallbacks 是否指向未认证 OAuth provider → `repairModelDefaults()` 切到 API Key sibling + 清 OAuth fallbacks + disable 残缺 OAuth provider node → write + reload Gateway。
+- **`src/main.js` boot hook** — 24h localStorage 节流执行(`privix_oauth_doctor_last_run`),avoid 每次冷启动都 reload Gateway。修复后 toast 提示。
+- 已知 OAuth provider 映射:`minimax-portal` → `minimax`、`kimi-coding-portal` → `kimi-coding`、`moonshot-portal` → `moonshot`。
+
+### 同步追踪
+
+- 阶段 1(关键安全 + 基础设施):`66c0db4`(部分,版本 pin)、`d191810`(完整)
+- 阶段 2(Hermes 三大运维页):`74a7f08` 摘 channels/services/config 部分、`71df25e` 摘 escapeHtml 安全修复
+- 阶段 3.1(Plugin doctor + Guardian banner):`cdda719` 摘 Module A + Module D
+- 阶段 3.2(OAuth provider doctor):`18cf7cd` 摘 Bug 1(provider-doctor + main.js boot hook)
+- 下一批:`cdda719` Module B/C/E、`18cf7cd` Bug 2/3/4(重命名 / 多模态聊天 / version-migration)、`7b3a1d9` feature gates 等
+
 ## [2.1.0-ce.1] - 2026-04-20
 
 社区版差异化里程碑:引入 ProspectResearch 研究工作台与三项隐私功能,明确"**隐私优先的 AI 研究工作台**"定位。

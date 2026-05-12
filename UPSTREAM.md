@@ -64,11 +64,31 @@ CE 独有的差异化功能,明确社区版与商业版的切分:
 4. **定期检查**:每个上游 release 发布后评估是否需要同步
 5. **安全修复优先**:上游的安全修复(CVE、XSS、注入漏洞)直接跟进
 
+## 已同步记录
+
+| 批次 | 来源 commit (ClawPanelInvest) | 同步范围 | CE commit |
+|---|---|---|---|
+| `sync/invest-2026-05` | `66c0db4` (v1.10.5) | Hermes Agent URL 版本 pin → `v2026.5.7` (0.13.0),含 8 个 P0 安全修复。未取该 commit 的 v1.7~v1.10 累积 Rust 命令、guardian / usage 命令 | b8fa531 |
+| `sync/invest-2026-05` | `d191810` (v1.9.3) | `enhanced_path()` 三平台补齐 cargo/go/deno/.local/bin,消除"shell OK / Privix command not found"诊断盲区 | b8fa531 |
+| `sync/invest-2026-05` | `74a7f08` (v1.10.0) 摘取 | Hermes 三大运维页(channels/services/config)落地 + `hermes_list_channels` / `hermes_set_channel_enabled` Rust 命令 + 通用化 `check_platform_enabled` / `patch_yaml_set_platform_enabled` + 3 个新 lib(gateway-restart-queue / async-button / error-report) + 11 locale × 34 i18n key + 3 comp_toast key。**跳过 models.js / dashboard 使用卡 / hermes_usage_today**(均为新功能而非 fix) | 待 commit |
+| `sync/invest-2026-05` | `71df25e` (v1.10.0) 摘取 | escHtml → escapeHtml 安全修复(channels.js / services.js 属性转义 XSS) + config.js lineHeight 魔法数修复。**跳过 dashboard.js refresh 并行化 / hermes_usage_today 反向扫尾**(我们没 port hermes_usage_today) | 243ea74 |
+| `sync/invest-2026-05` | `cdda719` (v1.10.7) Module A + D | Plugin 冲突主动检测(openclaw-plugin-doctor.js + plugin-hub.js conflict banner)+ Gateway Guardian 状态暴露(service.rs last_config_error + guardian-banner.js + dashboard 挂载)+ 11 locale × 21 key i18n。**跳过 Module B**(workspace 权限自检,涉及新 Rust 命令)、**Module C**(沙箱可视化,涉及新 Rust 命令 + channels.js modal 改)、**Module E**(健康总览 modal,依赖 B/C/D 全部) | f8f1408 |
+| `sync/invest-2026-05` | `18cf7cd` (v1.10.6) Bug 1 摘取 | OAuth Provider Doctor:`openclaw-provider-doctor.js`(216 行)修复 OpenClaw 5.4+ *-portal OAuth 与 API Key sibling 共存导致 fallback chain 全挂的问题。main.js boot hook 24h 节流触发。**跳过 Bug 2**(钳子助手→医生重命名,与 CE 命名状态不对齐)、**Bug 3**(chat 多模态,涉及 hermes_agent_run Rust 改动 + file-utils 新建 + chat.js 改)、**Bug 4**(welcome modal 路由 + version-migration.js 新建) | 待 commit |
+
 ## 待评估同步项
 
-跟踪 upstream clawpanel main 分支的变更,评估是否对社区版有价值:
-- SkillHub 安全校验(SHA-256 + VirusTotal)
-- 渠道插件版本智能适配
-- 工作区文件面板(Chat 页实时文件浏览)
-- service.rs 自动修复(config mismatch + 进程超时保护)
-- Hermes 页面内容补全(services.js / config.js / channels.js)
+跟踪商业版 ClawPanelInvest 与上游 clawpanel main 分支的变更,评估是否对社区版有价值:
+- SkillHub 安全校验(SHA-256 + VirusTotal) — ❌ 商业版未实现
+- 渠道插件版本智能适配 — ✅ **部分完成**:Plugin doctor + conflict banner 已同步(`cdda719` Module A),Module B 工作区权限和 Module C 沙箱可视化留待下一批
+- 工作区文件面板(Chat 页实时文件浏览) — ❌ 商业版未实现
+- service.rs 自动修复(config mismatch + 进程超时保护) — ✅ **部分完成**:`last_config_error` 暴露给前端 banner(`cdda719` Module D),完整的"自动修复"留待后续(目前是给用户根因 tip + 手动重启入口)
+- Hermes 页面内容补全(services.js / config.js / channels.js) — ✅ **已完成**(`sync/invest-2026-05` 第二批次同步自 invest `74a7f08` + `71df25e`)
+
+### 下一批次候选(评估顺序按价值)
+
+1. **`cdda719`** Module B + C + E:workspace-doctor + check_workspace_permissions Rust 命令 + 沙箱可视化 + 健康总览 modal(channels.js 深度改动 + 2 新 Rust 命令)
+4. **`18cf7cd`** 摘取:provider-doctor / version-migration / chat.js 多模态 — OAuth 引入需评估零遥测白名单
+5. **`7b3a1d9`** 摘取:openclaw-feature-gates 6 个新 gate + Plugin Hub doctor
+6. **`b623c32`** 摘取:chat.js 中文引号 escape 修复 + i18n.js 通用占位符
+7. **`3bbdcda`** 摘取:engine-manager.invalidate fix + i18n memo(页面切换性能)
+8. **`4a52b22`** 摘取:gateway-restart-queue + agent-health circuit-breaker 通用化

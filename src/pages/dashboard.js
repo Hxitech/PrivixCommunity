@@ -13,6 +13,7 @@ import { icon } from '../lib/icons.js'
 let _unsubGw = null
 let _loadInFlight = false
 let _lastGwChangeLoad = 0
+const _guardianBannerUnmounters = []
 
 export async function render() {
   const page = document.createElement('div')
@@ -23,6 +24,7 @@ export async function render() {
       <h1 class="page-title">${t('pages.dashboard.title')}</h1>
       <p class="page-desc">${t('pages.dashboard.status_overview')}</p>
     </div>
+    <div id="dashboard-guardian-banner-host"></div>
     <div class="stat-cards" id="stat-cards">
       <div class="stat-card loading-placeholder"></div>
       <div class="stat-card loading-placeholder"></div>
@@ -54,6 +56,21 @@ export async function render() {
   // 异步加载数据
   loadDashboardData(page)
 
+  // Module D: Guardian banner — give_up 时显示根因 + 手动重启按钮。
+  // 同一会话内可能多次 render(切回 dashboard),先清上一轮 unmounters 再挂新的,
+  // 避免 cleanup 时清的是旧实例、留下当前实例的 listener。
+  while (_guardianBannerUnmounters.length) {
+    const fn = _guardianBannerUnmounters.pop()
+    try { fn?.() } catch {}
+  }
+  const guardianHost = page.querySelector('#dashboard-guardian-banner-host')
+  if (guardianHost) {
+    import('../components/guardian-banner.js').then(mod => {
+      const unmount = mod.mountGuardianBanner(guardianHost)
+      _guardianBannerUnmounters.push(unmount)
+    }).catch(() => {})
+  }
+
   // 监听 Gateway 状态变化，节流刷新仪表盘（至少间隔 5 秒，防止状态抖动导致 UI 闪烁）
   if (_unsubGw) _unsubGw()
   _unsubGw = onGatewayChange(() => {
@@ -68,6 +85,11 @@ export async function render() {
 
 export function cleanup() {
   if (_unsubGw) { _unsubGw(); _unsubGw = null }
+  // Module D: 清 guardian banner unlisteners
+  while (_guardianBannerUnmounters.length) {
+    const fn = _guardianBannerUnmounters.pop()
+    try { fn?.() } catch {}
+  }
 }
 
 async function loadDashboardData(page) {

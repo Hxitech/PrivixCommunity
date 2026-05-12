@@ -3714,7 +3714,41 @@
       "memoryLoading": "Loading...",
       "memoryEmpty": "No content",
       "memoryPlaceholder": "Write in Markdown format...",
-      "memoryUnsaved": "Unsaved changes. Leave anyway?"
+      "memoryUnsaved": "Unsaved changes. Leave anyway?",
+      "channelsHeaderHint": "Manage 19 Hermes messaging platforms. Configure required environment variables in .env or via hermes setup before enabling.",
+      "channelsLoadError": "Failed to load channels",
+      "channelsBadgeNoConfig": "No config",
+      "channelsBadgeConfigured": "Configured",
+      "channelsBadgeMissing": "{count} missing",
+      "channelsEnvPresent": "Present in .env",
+      "channelsEnvAbsent": "Not configured",
+      "channelsLockedHint": "System-level, cannot disable",
+      "channelsBtnEditYaml": "Advanced",
+      "channelsHintAdvanced": "Advanced settings (tokens / extra fields) — click Advanced to jump to the YAML editor, or edit .env directly.",
+      "channelsNeedEnv": "Please configure in .env first: {vars}",
+      "channelsToastEnabled": "{name} enabled, Gateway will restart",
+      "channelsToastDisabled": "{name} disabled, Gateway will restart",
+      "channelsToastSaveFailed": "Save failed: {name}",
+      "servicesHeaderHint": "Hermes runtime subsystems overview. Click to manage each.",
+      "servicesLoadError": "Failed to load services",
+      "servicesGateway": "Gateway Process",
+      "servicesGatewayDesc": "Main process — LLM calls, tool execution, channel routing",
+      "servicesApiServer": "API Server",
+      "servicesApiServerDesc": "HTTP /v1/runs endpoint (required for Privix ↔ Hermes communication)",
+      "servicesCron": "Cron Jobs",
+      "servicesCronDesc": "Hermes built-in cron scheduler for timed agent runs",
+      "servicesChannels": "Messaging Channels",
+      "servicesChannelsDesc": "Enabled messaging platforms (Telegram / Discord / Slack etc.)",
+      "servicesEnabled": "Enabled",
+      "servicesDisabled": "Disabled",
+      "servicesChannelsEnabledN": "{count} enabled",
+      "servicesOpenDashboard": "Open Dashboard",
+      "servicesOpenConfig": "Open YAML Config",
+      "servicesOpenCron": "Manage Cron",
+      "servicesOpenChannels": "Manage Channels",
+      "servicesCopy": "Copy",
+      "servicesCopied": "Copied",
+      "servicesShowCurl": "Show curl example"
     },
     "quick_setup": {
       "step1_title": "OpenClaw Status",
@@ -3884,7 +3918,19 @@
       "toggleSuccess": "Plugin status updated",
       "toggleFailed": "Failed to toggle plugin",
       "showDetail": "Show details",
-      "hideDetail": "Hide details"
+      "hideDetail": "Hide details",
+      "conflict": {
+        "title": "{{count}} legacy plugin conflict(s) detected",
+        "subtitle": "OpenClaw 2026.5.3 moved official plugins to @openclaw/* npm packages. Running both old and official versions causes channel registration to fail.",
+        "action_migrate": "Migrate to official",
+        "action_disable": "Disable legacy",
+        "btn_fix_all": "Fix all",
+        "btn_dismiss": "Later",
+        "fixing": "Fixing...",
+        "fix_ok": "Fixed {{count}} conflict(s), restarting Gateway",
+        "fix_partial": "Processed {{count}}, some failed",
+        "fix_failed": "Fix failed"
+      }
     },
     "sop_invest": {
       "page_title": "SOP Execution Center",
@@ -4862,7 +4908,8 @@
     "version_available": "Privix v{version} available",
     "download_from_website": "Download from Website",
     "download_from_github": "Download from GitHub",
-    "dismiss_version": "Dismiss this version"
+    "dismiss_version": "Dismiss this version",
+    "toast_oauth_provider_repaired": "AI provider config auto-repaired (cleared OAuth provider residue)"
   },
   "ai_quick_config": {
     "system_assistant": "Claw Doctor",
@@ -5269,6 +5316,27 @@
       "apply_failed": "Write failed: {error}",
       "hermes_unavailable": "Hermes Agent unavailable: {error}",
       "empty_reply": "Empty LLM reply"
+    },
+    "guardian_banner": {
+      "title": "Gateway Guardian Paused",
+      "restart_count": "gave up after {{count}} restart attempts",
+      "btn_manual_restart": "Manual restart",
+      "btn_diagnose": "Diagnose Gateway",
+      "btn_dismiss": "Dismiss",
+      "restart_ok": "Gateway manually restarted",
+      "restart_failed": "Restart failed",
+      "tip": {
+        "eaddrinuse": "Port already in use. Could be another OpenClaw instance or external process. Run `lsof -i :18789` in Terminal to inspect.",
+        "eacces": "Permission denied. Likely an ownership issue under ~/.openclaw — try the \"Health check\" button on the Channel page for a one-click diagnosis.",
+        "syntax": "OpenClaw configuration syntax error. Run `openclaw doctor --fix` for auto-repair, or check JSON syntax in ~/.openclaw/openclaw.json.",
+        "module": "OpenClaw is missing a required Node module. Try the \"Repair\" button on the Plugin Hub page to reinstall dependencies.",
+        "generic": "Check ~/.openclaw/logs/gateway.err.log for details, or click \"Diagnose Gateway\" for a full connectivity test."
+      }
     }
+  },
+  "comp_toast": {
+    "copy_error": "Copy",
+    "copied": "Copied",
+    "copy_failed": "Copy failed"
   }
 }

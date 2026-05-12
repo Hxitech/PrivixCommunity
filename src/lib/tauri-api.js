@@ -464,6 +464,8 @@ export const api = {
   hermesSkillDetail: (filePath) => invoke('hermes_skill_detail', { filePath }),
   hermesMemoryRead: (type) => invoke('hermes_memory_read', { type: type || 'memory' }),
   hermesMemoryWrite: (type, content) => invoke('hermes_memory_write', { type: type || 'memory', content }),
+  hermesListChannels: () => invoke('hermes_list_channels'),
+  hermesSetChannelEnabled: (key, enabled) => invoke('hermes_set_channel_enabled', { key, enabled }),
 
   // === PE/VC 投资管理相关 API — 社区版全部移除 ===
 }

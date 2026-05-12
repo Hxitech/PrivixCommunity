@@ -1152,8 +1152,14 @@ fn extract_uv_tar_gz(data: &[u8], dest: &std::path::Path) -> Result<(), String> 
     Err("tar.gz 中未找到 uv".into())
 }
 
-/// Hermes Agent 的 GitHub 仓库地址（不在 PyPI 上发布，只能从 GitHub 安装）
-const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git";
+/// Hermes Agent 的 GitHub 安装源。v0.13.0 对应 release tag v2026.5.7(Tenacity Release)。
+/// 升级要点:8 个 P0 安全漏洞修复 + 默认开启 redaction + multi-agent Kanban + /goal 命令。
+/// 0.13 起 croniter 已是核心依赖(pyproject.toml dependencies),--with croniter 退化为
+/// no-op 兜底,保留以防上游再次拆分。Platform registry 与 0.12 builtin 21 个完全一致,
+/// 仅 yuanbao emoji 与若干 platform 的 env var 名称重命名 — panel 这一侧透明,
+/// 由用户在 ~/.hermes/config.yaml 中按新名称配置即可。
+const HERMES_TARGET_VERSION: &str = "0.13.0";
+const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git@v2026.5.7";
 
 /// 通过 uv tool install 安装 Hermes Agent（从 GitHub）
 async fn install_via_uv_tool(
@@ -1161,7 +1167,10 @@ async fn install_via_uv_tool(
     uv_path: &str,
     extras: &[String],
 ) -> Result<(), String> {
-    let _ = app.emit("hermes-install-log", "📦 通过 uv tool install 从 GitHub 安装 Hermes Agent...");
+    let _ = app.emit(
+        "hermes-install-log",
+        format!("📦 通过 uv tool install 安装 Hermes Agent v{HERMES_TARGET_VERSION}..."),
+    );
     let _ = app.emit("hermes-install-progress", 25u32);
 
     // 构造包名（PEP 508 格式: "pkg[extras] @ git+url"）
@@ -3141,6 +3150,223 @@ pub async fn hermes_memory_write(r#type: Option<String>, content: String) -> Res
     let file_path = mem_dir.join(file_name);
     std::fs::write(&file_path, &content).map_err(|e| format!("Failed to write memory: {e}"))?;
     Ok("ok".into())
+}
+
+// ============================================================================
+// platforms 配置守护 + Channels 管理
+// 同步自 invest 74a7f08 + cdda719(check_platform_enabled 通用化、api_server 守护)
+// ============================================================================
+
+/// 扫描 YAML 字符串,精确判断 platforms.<key>.enabled 是否为 true
+/// 通用版本,v1.10 起用于 channels 列表展示(原 api_server 守护是其特化形式)
+fn check_platform_enabled(raw: &str, key: &str) -> bool {
+    let mut in_platforms = false;
+    let mut in_target = false;
+    for line in raw.lines() {
+        let line = match line.find('#') {
+            Some(i) => &line[..i],
+            None => line,
+        };
+        let trimmed = line.trim_end();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let indent = trimmed.len() - trimmed.trim_start().len();
+
+        if indent == 0 {
+            in_platforms = trimmed.trim_start().starts_with("platforms:");
+            in_target = false;
+            continue;
+        }
+        if !in_platforms {
+            continue;
+        }
+        if indent <= 2 {
+            in_target = trimmed.trim_start().starts_with(&format!("{key}:"));
+            continue;
+        }
+        if !in_target {
+            continue;
+        }
+        let t = trimmed.trim_start();
+        if let Some(rest) = t.strip_prefix("enabled:") {
+            let v = rest.trim().trim_matches(|c: char| c == '"' || c == '\'');
+            return matches!(v.to_ascii_lowercase().as_str(), "true" | "yes" | "on" | "1");
+        }
+    }
+    false
+}
+
+/// 通用版本:把 platforms.<key>.enabled 设为指定值。
+/// 若已是目标状态,返回原字符串。否则写一份新版(保留兄弟节点)。
+fn patch_yaml_set_platform_enabled(raw: &str, key: &str, enabled: bool) -> String {
+    if check_platform_enabled(raw, key) == enabled {
+        return raw.to_string();
+    }
+
+    let lines: Vec<&str> = raw.lines().collect();
+    let mut out: Vec<String> = Vec::with_capacity(lines.len() + 4);
+    let mut platforms_found = false;
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i];
+        let trimmed = line.trim_end();
+        let indent = trimmed.len() - trimmed.trim_start().len();
+
+        if indent == 0 && trimmed.trim_start().starts_with("platforms:") {
+            out.push(line.to_string());
+            platforms_found = true;
+            i += 1;
+            // 累积 platforms 子节点,跳过原有的 target key 子树
+            let mut accumulated_children: Vec<String> = Vec::new();
+            let mut skipping_target = false;
+            while i < lines.len() {
+                let l = lines[i];
+                let t = l.trim_end();
+                let ind = t.len() - t.trim_start().len();
+                if ind == 0 && !t.is_empty() {
+                    break;
+                }
+                if ind <= 2 {
+                    skipping_target = t.trim_start().starts_with(&format!("{key}:"));
+                }
+                if !skipping_target {
+                    accumulated_children.push(l.to_string());
+                }
+                i += 1;
+            }
+            // 在 platforms: 顶部插入新的 target 子树
+            out.push(format!("  {key}:"));
+            out.push(format!("    enabled: {enabled}"));
+            out.extend(accumulated_children);
+            continue;
+        }
+        out.push(line.to_string());
+        i += 1;
+    }
+
+    if !platforms_found {
+        if let Some(last) = out.last() {
+            if !last.is_empty() {
+                out.push(String::new());
+            }
+        }
+        out.push("platforms:".into());
+        out.push(format!("  {key}:"));
+        out.push(format!("    enabled: {enabled}"));
+    }
+
+    let mut content = out.join("\n");
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    content
+}
+
+/// Hermes 19 个 platform 的展示元数据(对齐 hermes-agent v0.11.0 platforms.py)
+const HERMES_PLATFORMS: &[(&str, &str, &str, &[&str])] = &[
+    ("api_server", "🌐 API Server", "Hermes HTTP API(Privix 必需,启动时自动守护)", &[]),
+    ("cli", "🖥️ CLI", "命令行使用模式", &[]),
+    ("telegram", "📱 Telegram", "Telegram 机器人", &["TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_USERS"]),
+    ("discord", "💬 Discord", "Discord 机器人", &["DISCORD_BOT_TOKEN"]),
+    ("slack", "💼 Slack", "Slack 工作区(Socket Mode)", &["SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"]),
+    ("whatsapp", "📱 WhatsApp", "WhatsApp 桥接", &["WHATSAPP_API_TOKEN"]),
+    ("signal", "📡 Signal", "Signal 私聊", &["SIGNAL_PHONE_NUMBER"]),
+    ("bluebubbles", "💙 BlueBubbles", "iMessage(via BlueBubbles)", &["BLUEBUBBLES_HOST", "BLUEBUBBLES_PASSWORD"]),
+    ("email", "📧 Email", "邮件机器人(IMAP)", &["EMAIL_IMAP_HOST", "EMAIL_USER", "EMAIL_PASSWORD"]),
+    ("homeassistant", "🏠 Home Assistant", "智能家居", &["HOMEASSISTANT_URL", "HOMEASSISTANT_TOKEN"]),
+    ("mattermost", "💬 Mattermost", "Mattermost 协作", &["MATTERMOST_URL", "MATTERMOST_TOKEN"]),
+    ("matrix", "💬 Matrix", "Matrix 协议", &["MATRIX_HOMESERVER", "MATRIX_USER", "MATRIX_PASSWORD"]),
+    ("dingtalk", "💬 DingTalk", "钉钉企业群", &["DINGTALK_APP_KEY", "DINGTALK_APP_SECRET"]),
+    ("feishu", "🪽 Feishu", "飞书 / Lark", &["FEISHU_APP_ID", "FEISHU_APP_SECRET"]),
+    ("wecom", "💬 WeCom", "企业微信", &["WECOM_CORP_ID", "WECOM_AGENT_ID", "WECOM_SECRET"]),
+    ("wecom_callback", "💬 WeCom Callback", "企业微信回调", &["WECOM_CALLBACK_TOKEN"]),
+    ("weixin", "💬 Weixin", "微信公众号", &["WEIXIN_APP_ID", "WEIXIN_APP_SECRET"]),
+    ("qqbot", "💬 QQBot", "QQ 官方机器人", &["QQBOT_APP_ID", "QQBOT_TOKEN"]),
+    ("webhook", "🔗 Webhook", "通用 Webhook 入站(零 LLM 直推支持)", &[]),
+];
+
+/// 列出 19 个 platform 的启用状态 + 必填环境变量 + 已配置情况
+#[tauri::command]
+pub fn hermes_list_channels() -> Result<serde_json::Value, String> {
+    let path = hermes_home().join("config.yaml");
+    let raw = if path.exists() {
+        std::fs::read_to_string(&path).map_err(|e| format!("读 config.yaml 失败: {e}"))?
+    } else {
+        String::new()
+    };
+
+    let env_path = hermes_home().join(".env");
+    let env_raw = if env_path.exists() {
+        std::fs::read_to_string(&env_path).unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    let env_keys: std::collections::HashSet<String> = env_raw
+        .lines()
+        .filter_map(|l| {
+            let l = l.trim();
+            if l.is_empty() || l.starts_with('#') {
+                return None;
+            }
+            l.split_once('=').map(|(k, _)| k.trim().to_string())
+        })
+        .collect();
+
+    let mut channels = Vec::with_capacity(HERMES_PLATFORMS.len());
+    for (key, label, desc, required) in HERMES_PLATFORMS {
+        let enabled = check_platform_enabled(&raw, key);
+        let missing_env: Vec<&&str> = required.iter().filter(|k| !env_keys.contains(**k)).collect();
+        channels.push(serde_json::json!({
+            "key": key,
+            "label": label,
+            "desc": desc,
+            "enabled": enabled,
+            "required_env": required,
+            "missing_env": missing_env,
+            "configured": missing_env.is_empty(),
+        }));
+    }
+
+    Ok(serde_json::json!({
+        "channels": channels,
+        "config_path": path.to_string_lossy(),
+        "env_path": env_path.to_string_lossy(),
+    }))
+}
+
+/// 切换某个 platform 的 enabled 状态(写入 config.yaml + 自动备份)
+#[tauri::command]
+pub fn hermes_set_channel_enabled(key: String, enabled: bool) -> Result<String, String> {
+    let valid: bool = HERMES_PLATFORMS.iter().any(|(k, ..)| *k == key);
+    if !valid {
+        return Err(format!("未知的 platform key: {key}"));
+    }
+
+    let path = hermes_home().join("config.yaml");
+    let raw = if path.exists() {
+        std::fs::read_to_string(&path).map_err(|e| format!("读 config.yaml 失败: {e}"))?
+    } else {
+        String::new()
+    };
+
+    let new_raw = patch_yaml_set_platform_enabled(&raw, &key, enabled);
+    if new_raw == raw {
+        return Ok("no_change".into());
+    }
+
+    if path.exists() {
+        let ts = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let _ = std::fs::copy(&path, path.with_extension(format!("yaml.bak-{ts}")));
+    } else if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).ok();
+    }
+    std::fs::write(&path, &new_raw).map_err(|e| format!("写 config.yaml 失败: {e}"))?;
+    Ok(if enabled { "enabled" } else { "disabled" }.into())
 }
 
 #[cfg(test)]
