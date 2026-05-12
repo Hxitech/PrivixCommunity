@@ -4,6 +4,32 @@
 
 `-ce.N` 后缀表示 Community Edition 的迭代号。
 
+## [Unreleased] — sync/invest-2026-05
+
+从商业版 ClawPanelInvest(v1.10.7)同步通用 fix。本批仅包含**关键安全升级 + 基础设施修复**,功能性同步(Hermes 三大运维页、渠道治理 UX、provider OAuth 等)将分批次进行。
+
+### ⚠ 破坏性变更
+
+- **Hermes Agent 升级到 0.13.0**(Tenacity Release,release tag `v2026.5.7`):8 个 P0 安全漏洞修复 + 默认开启 redaction + multi-agent Kanban + `/goal` 命令。**升级后用户需手动更新 `~/.hermes/config.yaml` 中部分 platform 的 env var 名称**(panel 这一侧不维护 platform env 映射表,完全透明转发用户配置)。env var 重命名映射:
+  - `bluebubbles.HOST` → `SERVER_URL`
+  - `email.USER` → `ADDRESS`
+  - `homeassistant.URL` / `TOKEN` → `HASS_URL` / `HASS_TOKEN`
+  - `dingtalk.APP_KEY` / `SECRET` → `CLIENT_ID` / `SECRET`
+  - `signal.PHONE_NUMBER` → `ACCOUNT`
+  - `whatsapp` 删除 `API_TOKEN`(改用外部 bridge)
+  - `matrix` 删除 `USER`(从 access token 推断)
+  - yuanbao 默认 emoji 💬 → 🤖
+- 同时引入 GitHub URL 版本 pin(`@v2026.5.7`),取代之前裸 main 分支安装。CE 用户现在能精确锁定 Hermes 版本,避免随上游 main 漂移。
+
+### 修复
+
+- **`enhanced_path` 三平台补齐 cargo/go/deno/.local/bin**(同步 invest `d191810`):Tauri 子进程现在能在 PATH 中找到 `~/.cargo/bin`、`~/go/bin`、`~/.deno/bin`(三平台)以及 macOS 的 `~/.local/bin`(uv/pipx 装的 Python AI CLI)。修复"用户 shell 跑 OK、Privix 内 command not found"的诊断盲区,影响所有用 Rust/Go/Deno/uv 装的外部 MCP server 与 CLI 工具。
+
+### 同步追踪
+
+- 已同步:`66c0db4`(部分:仅版本 pin,大部 v1.7~v1.10 累积 Hermes 改动留待后续批次)、`d191810`(完整)
+- UPSTREAM.md 第 5 项 "Hermes 页面补全" — 部分进展,Hermes 引擎核心 URL 已对齐到 v2026.5.7,三大运维页(channels/services/config)留待下一批次
+
 ## [2.1.0-ce.1] - 2026-04-20
 
 社区版差异化里程碑:引入 ProspectResearch 研究工作台与三项隐私功能,明确"**隐私优先的 AI 研究工作台**"定位。

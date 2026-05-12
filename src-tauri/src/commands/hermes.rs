@@ -1152,8 +1152,14 @@ fn extract_uv_tar_gz(data: &[u8], dest: &std::path::Path) -> Result<(), String> 
     Err("tar.gz 中未找到 uv".into())
 }
 
-/// Hermes Agent 的 GitHub 仓库地址（不在 PyPI 上发布，只能从 GitHub 安装）
-const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git";
+/// Hermes Agent 的 GitHub 安装源。v0.13.0 对应 release tag v2026.5.7(Tenacity Release)。
+/// 升级要点:8 个 P0 安全漏洞修复 + 默认开启 redaction + multi-agent Kanban + /goal 命令。
+/// 0.13 起 croniter 已是核心依赖(pyproject.toml dependencies),--with croniter 退化为
+/// no-op 兜底,保留以防上游再次拆分。Platform registry 与 0.12 builtin 21 个完全一致,
+/// 仅 yuanbao emoji 与若干 platform 的 env var 名称重命名 — panel 这一侧透明,
+/// 由用户在 ~/.hermes/config.yaml 中按新名称配置即可。
+const HERMES_TARGET_VERSION: &str = "0.13.0";
+const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git@v2026.5.7";
 
 /// 通过 uv tool install 安装 Hermes Agent（从 GitHub）
 async fn install_via_uv_tool(
@@ -1161,7 +1167,10 @@ async fn install_via_uv_tool(
     uv_path: &str,
     extras: &[String],
 ) -> Result<(), String> {
-    let _ = app.emit("hermes-install-log", "📦 通过 uv tool install 从 GitHub 安装 Hermes Agent...");
+    let _ = app.emit(
+        "hermes-install-log",
+        format!("📦 通过 uv tool install 安装 Hermes Agent v{HERMES_TARGET_VERSION}..."),
+    );
     let _ = app.emit("hermes-install-progress", 25u32);
 
     // 构造包名（PEP 508 格式: "pkg[extras] @ git+url"）

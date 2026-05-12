@@ -64,11 +64,37 @@ CE 独有的差异化功能,明确社区版与商业版的切分:
 4. **定期检查**:每个上游 release 发布后评估是否需要同步
 5. **安全修复优先**:上游的安全修复(CVE、XSS、注入漏洞)直接跟进
 
+## 已同步记录
+
+| 批次 | 来源 commit (ClawPanelInvest) | 同步范围 | CE commit |
+|---|---|---|---|
+| `sync/invest-2026-05` | `66c0db4` (v1.10.5) | Hermes Agent URL 版本 pin → `v2026.5.7` (0.13.0),含 8 个 P0 安全修复。未取该 commit 的 v1.7~v1.10 累积 Rust 命令、guardian / usage 命令 | 待 commit |
+| `sync/invest-2026-05` | `d191810` (v1.9.3) | `enhanced_path()` 三平台补齐 cargo/go/deno/.local/bin,消除"shell OK / Privix command not found"诊断盲区 | 待 commit |
+
 ## 待评估同步项
 
-跟踪 upstream clawpanel main 分支的变更,评估是否对社区版有价值:
-- SkillHub 安全校验(SHA-256 + VirusTotal)
-- 渠道插件版本智能适配
-- 工作区文件面板(Chat 页实时文件浏览)
-- service.rs 自动修复(config mismatch + 进程超时保护)
-- Hermes 页面内容补全(services.js / config.js / channels.js)
+跟踪商业版 ClawPanelInvest 与上游 clawpanel main 分支的变更,评估是否对社区版有价值:
+- SkillHub 安全校验(SHA-256 + VirusTotal) — ❌ 商业版未实现
+- 渠道插件版本智能适配 — ✅ 商业版 `cdda719`(v1.10.7)已实现,可 cherry-pick
+- 工作区文件面板(Chat 页实时文件浏览) — ❌ 商业版未实现
+- service.rs 自动修复(config mismatch + 进程超时保护) — ⚠️ 商业版 `cdda719` 部分实现(诊断已成熟,主动修复待补)
+- Hermes 页面内容补全(services.js / config.js / channels.js) — ✅ 商业版 `74a7f08`(v1.10.0)+ `7b3a1d9`(v1.10.2)已实现,Rust 后端依赖 `hermes_list_channels` / `hermes_set_channel_enabled` 等新 RPC,需配套 port 大量 hermes.rs 改动
+
+### 下一批次候选(评估顺序按价值)
+
+1. **`74a7f08`** Hermes 三大运维页落地(channels / services / config)— UPSTREAM 第 5 项核心。**实际跨度远超单 commit**,需先 port 多个前置依赖:
+   - 新建 `src/lib/gateway-restart-queue.js`(防抖 + 串行的 gateway 重启队列)
+   - 新建 `src/lib/async-button.js`(`wrapAsyncButton` 工具)
+   - 新建 `src/lib/error-report.js`(`reportError` 统一错误上报)
+   - Rust 端:`hermes.rs` 新增 `hermes_list_channels` / `hermes_set_channel_enabled` 命令,通用化 `check_platform_enabled` / `patch_yaml_set_platform_enabled` 等 ~300 行
+   - `src/lib/tauri-api.js`:挂上述 RPC + Web 模式 mock
+   - 三页面落地:`channels.js`(164 行)、`services.js`(150 行)、`config.js`(118 行)
+   - i18n:11 locale × ~15 新 key ≈ 165 行翻译(可机械同步自 invest 的 i18n diff)
+   - 估计 1000+ 行总改动,适合作为独立 PR
+2. **`71df25e`** Hermes refactor — 紧跟 74a7f08 的代码风格收敛
+3. **`cdda719`** 摘取:openclaw-plugin-doctor / workspace-doctor / guardian-banner / service.rs config error detection — UPSTREAM 第 2 + 第 4 项部分
+4. **`18cf7cd`** 摘取:provider-doctor / version-migration / chat.js 多模态 — OAuth 引入需评估零遥测白名单
+5. **`7b3a1d9`** 摘取:openclaw-feature-gates 6 个新 gate + Plugin Hub doctor
+6. **`b623c32`** 摘取:chat.js 中文引号 escape 修复 + i18n.js 通用占位符
+7. **`3bbdcda`** 摘取:engine-manager.invalidate fix + i18n memo(页面切换性能)
+8. **`4a52b22`** 摘取:gateway-restart-queue + agent-health circuit-breaker 通用化
