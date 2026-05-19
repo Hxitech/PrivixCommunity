@@ -261,6 +261,10 @@ export const api = {
   writeMcpConfig: (config) => { invalidate('read_mcp_config'); return invoke('write_mcp_config', { config }) },
   reloadGateway: () => invoke('reload_gateway'),
   restartGateway: () => invoke('restart_gateway'),
+
+  // v1.10.7 — Workspace 权限自检 + 打开 workspace 文件夹
+  checkWorkspacePermissions: () => invoke('check_workspace_permissions'),
+  openWorkspaceFolder: () => invoke('open_workspace_folder'),
   listOpenclawVersions: (source = 'chinese') => invoke('list_openclaw_versions', { source }),
   upgradeOpenclaw: (source = 'chinese', version = null, method = 'auto') => invoke('upgrade_openclaw', { source, version, method }),
   uninstallOpenclaw: (cleanConfig = false) => invoke('uninstall_openclaw', { cleanConfig }),

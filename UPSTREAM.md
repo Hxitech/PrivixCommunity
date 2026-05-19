@@ -78,20 +78,21 @@ CE 独有的差异化功能,明确社区版与商业版的切分:
 | `sync/invest-2026-06` | `47bd66d` (v1.10.8) 摘取 | OpenClaw 升级前自动 `create_backup()`(config.rs)+ Gateway `/health` 卡死探针 3 次失败自动 reload(service.rs)+ `CONFIG_ERROR_PATTERNS` 加 9 个模式(ECONNREFUSED/EMFILE/TLS) + Hermes 安装日志 `sanitize_hermes_install_output()`(hermes.rs)+ boot Promise.all 三路并发 + `.catch` 错误 UI 兜底(main.js)+ readOpenclawConfig/readMcpConfig TTL 15→60s + chat.js loadHistory 代际计数 + assistant.js visibility skip + cron.js render 去 await + guardian-banner restore-recommended 按钮 + 11 locale × 8 i18n key。**跳过** star-office.js / automation.js(CE 无)/ openclaw-version-policy.json(CE 自己 baseline)/ run_openclaw_compat_repair_after_upgrade(CE 无该函数) | 待 commit |
 | `sync/invest-2026-06` | `8bfc138` (v1.10.9) | Windows 关机阶段 0xc0000142 弹窗修复:删除 `RunEvent::Exit` 的 Windows shutdown handler(lib.rs -13 行)。同步上游 v0.15.3 | 待 commit |
 | `sync/invest-2026-06` | `ca62b5d` (v1.10.10) 摘取 | Hermes `memory.js` / `skills.js` 本地 `escHtml`(缺 `"`/`'` 转义)→ `escape.js#escapeHtml`,与 sync-05 的 channels/services 修复同源。**跳过 hero.js 提取 / hermes.css 动画去重 / 死资源删除**(均为视觉个性化,CE 未引入对应基线) | 4ab3ecb |
+| `sync/invest-2026-07` | `cdda719` (v1.10.7) Module B + C 摘取 | **Workspace 权限自检** — `openclaw-workspace-doctor.js`(109 行 lib)+ `check_workspace_permissions` Rust 命令(扫 workspace + 6 个子目录的 Unix uid,与当前 $HOME uid 比对)+ Channels 页 render() 后触发 + modal(列 bad dirs + sudo chown 命令一键复制 + "复检"按钮)+ 24h localStorage 节流。**本地文件沙箱可视化** — 11 个 platform 配置 modal 顶部 info card(workspace / media / tmp 允许目录)+ "打开 workspace" 按钮调新 Rust `open_workspace_folder` 命令(macOS open / Linux xdg-open / Windows explorer)+ 11 locale × 16 新 i18n key。**跳过 Module E**(health-overview-modal.js 209 行新组件) | 待 commit |
 | `sync/invest-2026-07` | `77b7ca3` (v1.10.14) 摘取 | **OpenClaw 5.12 内核兼容** — `8b690cb`: Gateway 握手协议 v4 (`maxProtocol: 3→4` 在 device.rs `create_connect_frame`) + `ws-client.js` 加 `negotiatedProtocol` getter + `chat-event-compat.js` 加 `replace=true` 语义 + `openclaw-feature-gates.js` 加 2 个新常量。`dcafd29`(部分): `versions_match` / `recommended_is_newer` suffix 级补丁检测。**chat 路由守卫** — `f411386`: 5 处 `_messagesEl.isConnected` 守卫(`createStreamBubble` / `renderChatGroup` / `appendSystemMessage` 等),消除路由切换后异步事件污染死 DOM。**主模型自愈** — `9742786`: dashboard.js 加 `collectConfigModels` / `defaultModelNeedsNormalization` / `normalizeDefaultModelConfig` 自愈 primary/fallbacks。**Dashboard 启动性能** — `322bf1a` + `2f7cd6d`: version 拉到独立 Promise + 核心 timeout 12s/5s → 2.5s/2s + 1.2s 首屏兜底 + 模块级 `_dashboardVersionCache`。**跳过** Services/About "升级到最新版" 按钮 / 协议徽标 UI / 助手按引擎切换身份 / Hermes Rust/install fix(provider 自愈、互斥锁、hermes_capabilities、安装诊断、Qwen rename — CE 无 Hermes provider 系统前置)/ Windows Gateway 可见终端(Privix 独有)/ 推荐版本号 5.7→5.12(CE baseline 自决) | 待 commit |
 
 ## 待评估同步项
 
 跟踪商业版 ClawPanelInvest 与上游 clawpanel main 分支的变更,评估是否对社区版有价值:
 - SkillHub 安全校验(SHA-256 + VirusTotal) — ❌ 商业版未实现
-- 渠道插件版本智能适配 — ✅ **部分完成**:Plugin doctor + conflict banner 已同步(`cdda719` Module A),Module B 工作区权限和 Module C 沙箱可视化留待下一批
+- 渠道插件版本智能适配 — ✅ **已完成**:Plugin doctor + conflict banner(`cdda719` Module A,sync-05)+ Workspace 权限自检 + 沙箱可视化(`cdda719` Module B+C,sync-07);Module E 健康总览暂跳(新功能,209 行)
 - 工作区文件面板(Chat 页实时文件浏览) — ❌ 商业版未实现
 - service.rs 自动修复(config mismatch + 进程超时保护) — ✅ **部分完成**:`last_config_error` 暴露给前端 banner(`cdda719` Module D),完整的"自动修复"留待后续(目前是给用户根因 tip + 手动重启入口)
 - Hermes 页面内容补全(services.js / config.js / channels.js) — ✅ **已完成**(`sync/invest-2026-05` 第二批次同步自 invest `74a7f08` + `71df25e`)
 
 ### 下一批次候选(评估顺序按价值)
 
-1. **`cdda719`** Module B(workspace 权限自检 — 纯 fix,~350 LOC,推荐独立批次):`check_workspace_permissions` Rust 命令 + `openclaw-workspace-doctor.js` + Channels 页 render() 后触发 + sudo chown 引导 modal。Module C/E(沙箱可视化 + 健康总览)是新功能,暂跳
+1. **`cdda719` Module E**(health-overview-modal.js 209 行新组件 — 跳过,新功能)
 2. **`77b7ca3` 剩余**:`models.js` 主模型自愈完整版(154 行 diff,补 dashboard 简版未覆盖的 toast + 4 个 helper)/`settings.js` Windows 终端选项 / `assistant.js` 引擎切换身份(110 LOC,Hermes Only)/ `about.js`+`services.js` "升级到最新版" 按钮
 3. **`18cf7cd`** Bug 3:chat 多模态(涉及 hermes_agent_run Rust 改 + file-utils 新建 + chat.js 改)
 4. **`7b3a1d9`** 摘取:openclaw-feature-gates 6 个新 gate + Plugin Hub doctor

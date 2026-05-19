@@ -8,6 +8,7 @@ import { showContentModal, showConfirm } from '../components/modal.js'
 import { icon } from '../lib/icons.js'
 import { isFeatureAvailable } from '../lib/openclaw-feature-gates.js'
 import { t } from '../lib/i18n.js'
+import { escapeHtml as esc } from '../lib/escape.js'
 
 // ── 渠道注册表：定义每个支持的消息渠道的元数据和表单规格 ──
 
@@ -169,11 +170,59 @@ export async function render() {
   const state = { configured: [] }
   await loadPlatforms(page, state)
 
+  // Module B: 后台异步跑 workspace 权限自检,有问题才弹 modal(24h 节流)
+  setTimeout(() => triggerWorkspacePermissionCheck(), 0)
 
   return page
 }
 
 export function cleanup() {}
+
+/** Module B: 触发 workspace 权限自检,需要修复时弹 modal */
+async function triggerWorkspacePermissionCheck() {
+  try {
+    const { runWorkspaceDoctor, copyChownCommand } = await import('../lib/openclaw-workspace-doctor.js')
+    const result = await runWorkspaceDoctor()
+    if (!result || result.throttled || !result.needsFix) return
+
+    const dirsHtml = result.badDirs.map(d => `<li><code style="font-size:12px">${esc(d.path)}</code> <span style="color:var(--text-tertiary,#9ca3af);font-size:11px">(uid=${d.ownerUid})</span></li>`).join('')
+
+    const overlay = showContentModal({
+      title: t('pages.channels.workspace_perm.title'),
+      content: `
+        <div style="font-size:13px;line-height:1.6">
+          <p>${t('pages.channels.workspace_perm.summary', { count: result.badDirs.length })}</p>
+          <ul style="margin:8px 0 12px;padding-left:20px;max-height:160px;overflow:auto">${dirsHtml}</ul>
+          <p style="font-weight:500;margin-bottom:6px">${t('pages.channels.workspace_perm.run_command')}</p>
+          <div style="display:flex;gap:6px;align-items:stretch">
+            <code id="ws-chown-cmd" style="flex:1;padding:8px 10px;background:var(--bg-secondary,#f3f4f6);border-radius:6px;font-size:12px;word-break:break-all">${esc(result.chownCommand || '')}</code>
+            <button class="btn btn-pill-outline btn-sm" id="ws-copy-btn" style="flex-shrink:0">${t('pages.channels.workspace_perm.btn_copy')}</button>
+          </div>
+          <p style="margin-top:12px;color:var(--text-tertiary,#9ca3af);font-size:12px">${t('pages.channels.workspace_perm.hint')}</p>
+        </div>
+      `,
+      width: 540,
+      buttons: [
+        { id: 'ws-recheck-btn', label: t('pages.channels.workspace_perm.btn_recheck'), className: 'btn btn-pill-filled btn-sm' },
+      ],
+    })
+    overlay.querySelector('#ws-copy-btn').onclick = async () => {
+      const ok = await copyChownCommand(result.chownCommand)
+      toast(ok ? t('pages.channels.workspace_perm.copied') : t('pages.channels.workspace_perm.copy_failed'), ok ? 'success' : 'error')
+    }
+    overlay.querySelector('#ws-recheck-btn').onclick = async () => {
+      const recheck = await runWorkspaceDoctor({ force: true })
+      if (recheck && !recheck.needsFix) {
+        toast(t('pages.channels.workspace_perm.fixed'), 'success')
+        overlay.close()
+      } else {
+        toast(t('pages.channels.workspace_perm.still_bad', { count: recheck?.badDirs?.length ?? 0 }), 'warning')
+      }
+    }
+  } catch {
+    // 自检失败静默 — 不阻断主流程
+  }
+}
 
 // ── 数据加载 ──
 
@@ -591,8 +640,29 @@ async function openConfigDialog(pid, page, state, accountId = null) {
     </div>
   ` : ''
 
+  // Module C: 本地文件沙箱可视化 — 支持本地文件发送的 platform 显示路径限制说明
+  // OpenClaw message tool 限制 filePath 必须在 ~/.openclaw/workspace / media / /tmp/openclaw 之内,
+  // Desktop / Documents 不行。用户最常踩这个坑(LocalMediaAccessError)。
+  const SUPPORTS_LOCAL_FILES = new Set(['telegram', 'feishu', 'dingtalk', 'discord', 'slack', 'line', 'whatsapp', 'signal', 'matrix', 'qqbot', 'teams'])
+  const sandboxHtml = SUPPORTS_LOCAL_FILES.has(pid) ? `
+    <div style="background:var(--info-bg, #eff6ff);border:1px solid var(--info-border, #93c5fd);padding:12px 14px;border-radius:var(--radius-md);margin-bottom:var(--space-md);font-size:var(--font-size-sm);line-height:1.6">
+      <div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--info, #1e40af);margin-bottom:4px">
+        <span>📁</span>${t('pages.channels.local_file_sandbox.title')}
+      </div>
+      <div style="color:var(--text-secondary);margin-bottom:6px">${t('pages.channels.local_file_sandbox.intro')}</div>
+      <ul style="margin:6px 0 6px 20px;color:var(--text-secondary);font-size:12px">
+        <li><code>~/.openclaw/workspace/</code></li>
+        <li><code>~/.openclaw/media/</code></li>
+        <li><code>/tmp/openclaw/</code></li>
+      </ul>
+      <div style="color:var(--text-tertiary, #9ca3af);font-size:12px;margin-bottom:8px">${t('pages.channels.local_file_sandbox.hint')}</div>
+      <button type="button" class="btn btn-pill-outline btn-sm" id="btn-open-workspace">${t('pages.channels.local_file_sandbox.btn_open')}</button>
+    </div>
+  ` : ''
+
   const content = `
     ${guideHtml}
+    ${sandboxHtml}
     ${isEdit ? `<div style="background:var(--accent-muted);color:var(--accent);padding:8px 14px;border-radius:var(--radius-md);font-size:var(--font-size-sm);margin-bottom:var(--space-md)">当前已有配置，修改后点击保存即可覆盖</div>` : ''}
     <form id="${formId}">
       ${accountFieldHtml}
@@ -635,6 +705,16 @@ async function openConfigDialog(pid, page, state, accountId = null) {
     if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
       e.preventDefault()
       openExternalUrl(href)
+    }
+  })
+
+  // Module C: 打开 workspace 文件夹
+  modal.querySelector('#btn-open-workspace')?.addEventListener('click', async () => {
+    try {
+      const path = await api.openWorkspaceFolder()
+      toast(t('pages.channels.local_file_sandbox.opened', { path }), 'success', { duration: 4000 })
+    } catch (err) {
+      toast(`${t('pages.channels.local_file_sandbox.open_failed')}: ${err?.message || err}`, 'error')
     }
   })
 

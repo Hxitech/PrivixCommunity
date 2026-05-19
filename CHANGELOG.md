@@ -10,6 +10,18 @@
 
 ---
 
+### sync/invest-2026-07 (续) — Module B/C: Workspace 权限自检 + 沙箱可视化
+
+从 invest `cdda719` (v1.10.7) 摘取 Module B + Module C。**跳过 Module E**(`health-overview-modal.js` 209 行新组件,新功能)。
+
+#### 新增
+
+- **Workspace 权限自检**(Module B):新建 `src/lib/openclaw-workspace-doctor.js` + Rust `check_workspace_permissions` 命令。Channels 页 render() 后异步触发(24h localStorage 节流),Unix 用 `$HOME` uid 作当前用户代理,扫 workspace + scripts/skills/memory/.clawhub/media/tmp 子目录;Windows 直接返回 needsFix=false(NTFS 权限模型不同)。需要修复时弹 modal 列出 bad dirs + `sudo chown` 命令(可一键复制)+ "复检"按钮。Tauri 拿不到 elevation token,不直接执行 sudo
+- **本地文件沙箱可视化**(Module C):11 个支持本地文件的 channel(telegram / feishu / dingtalk / discord / slack / line / whatsapp / signal / matrix / qqbot / teams)配置 modal 顶部追加蓝色 info card,列出 OpenClaw 允许目录(`~/.openclaw/workspace/` / `media/` / `/tmp/openclaw/`)。"📁 打开 workspace 文件夹" 按钮调新 Rust `open_workspace_folder` 命令(macOS `open` / Linux `xdg-open` / Windows `explorer`,不存在时 mkdir -p 兜底)
+- Rust 新命令 2 个:`check_workspace_permissions` / `open_workspace_folder`(`src-tauri/src/commands/config.rs`)
+- 前端 lib 新增 1 个:`openclaw-workspace-doctor.js`(109 行)
+- 11 locale × 16 新 i18n key(workspace_perm × 9 + local_file_sandbox × 7)
+
 ### sync/invest-2026-07 — OpenClaw 5.12 内核兼容 + Dashboard 启动性能 + chat 路由守卫
 
 聚焦"已有功能 fix + 性能 + 安全",从 invest `77b7ca3` (v1.10.14 上游 v0.16.0 17 cherry-pick) 摘取 P0 内核兼容 + P1 UX/稳定子项。**跳过**视觉个性化、Hermes 独占新功能(provider 自愈 / hermes_capabilities / 安装诊断 / Qwen rename — CE 无 backend)、推荐版本号 bump(CE baseline 自决)。

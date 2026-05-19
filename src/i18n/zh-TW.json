@@ -1435,7 +1435,27 @@
       "qq_hints_title": "說明",
       "toast_repair_done": "修復完成",
       "toast_repair_failed": "一鍵修復失敗: {error}",
-      "diagnose_running": "診斷中..."
+      "diagnose_running": "診斷中...",
+      "workspace_perm": {
+        "title": "工作區權限異常",
+        "summary": "檢測到 {{count}} 個目錄由其他用戶擁有,OpenClaw 寫入會報 EACCES",
+        "run_command": "請在終端運行(需要 Mac 登錄密碼):",
+        "btn_copy": "復製",
+        "btn_recheck": "復檢",
+        "hint": "復製命令到終端運行後,點\"復檢\"按鈕重新驗證。",
+        "copied": "命令已復製到剪貼板",
+        "copy_failed": "復製失敗,請手動選中命令復製",
+        "fixed": "工作區權限已恢復",
+        "still_bad": "還有 {{count}} 個目錄未修復"
+      },
+      "local_file_sandbox": {
+        "title": "發送本地文件的路徑限製",
+        "intro": "OpenClaw message 工具只能發送以下目錄裡的文件:",
+        "hint": "桌面、文檔等其他目錄的文件需要先復製到 workspace 才能發送(常見錯誤:LocalMediaAccessError)",
+        "btn_open": "📁 打開 workspace 文件夹",
+        "opened": "已打開 {{path}}",
+        "open_failed": "打開失敗"
+      }
     },
     "services": {
       "title": "服務管理",

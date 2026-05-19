@@ -99,6 +99,8 @@ pub fn run() {
             config::get_openclaw_dir,
             config::doctor_fix,
             config::doctor_check,
+            config::check_workspace_permissions,
+            config::open_workspace_folder,
             config::test_proxy,
             config::get_npm_registry,
             config::set_npm_registry,

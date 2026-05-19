@@ -1144,7 +1144,27 @@
       "qq_hints_title": "Notes",
       "toast_repair_done": "Repair completed",
       "toast_repair_failed": "One-click repair failed: {error}",
-      "diagnose_running": "Diagnosing..."
+      "diagnose_running": "Diagnosing...",
+      "workspace_perm": {
+        "title": "Workspace permissions issue",
+        "summary": "{{count}} director(ies) owned by another user — OpenClaw will hit EACCES when writing",
+        "run_command": "Run in Terminal (your Mac password is required):",
+        "btn_copy": "Copy",
+        "btn_recheck": "Re-check",
+        "hint": "Copy the command, run it in Terminal, then click \"Re-check\" to verify.",
+        "copied": "Command copied to clipboard",
+        "copy_failed": "Copy failed — please select and copy manually",
+        "fixed": "Workspace permissions restored",
+        "still_bad": "Still {{count}} bad director(ies)"
+      },
+      "local_file_sandbox": {
+        "title": "Local file path restrictions",
+        "intro": "OpenClaw message tool can only send files from these directories:",
+        "hint": "Files in Desktop, Documents, etc. must be copied to workspace first (common error: LocalMediaAccessError)",
+        "btn_open": "📁 Open workspace folder",
+        "opened": "Opened {{path}}",
+        "open_failed": "Open failed"
+      }
     },
     "services": {
       "title": "Service Management",

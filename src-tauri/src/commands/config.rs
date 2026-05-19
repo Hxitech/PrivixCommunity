@@ -3490,6 +3490,132 @@ pub fn get_openclaw_dir() -> Result<Value, String> {
     }))
 }
 
+/// 检查 ~/.openclaw/workspace/ 及关键子目录的所有权。
+/// macOS/Linux：当前用户 uid 与目录 uid 不匹配视为 root-owned 残留。
+/// Windows：直接返回 needsFix=false（NTFS 权限模型不同，跳过）。
+///
+/// 用户场景：历史 sudo 装包 / Docker run 残留导致 ~/.openclaw/workspace/scripts 等
+/// 子目录被 root 拥有，OpenClaw 写入时报 EACCES。Panel 检测到后弹 modal 引导用户
+/// 跑 sudo chown 命令（不直接执行 sudo，因为 Tauri 拿不到 elevation token）。
+#[tauri::command]
+pub async fn check_workspace_permissions() -> Result<Value, String> {
+    let workspace = super::openclaw_dir().join("workspace");
+    if !workspace.exists() {
+        return Ok(json!({
+            "exists": false,
+            "needsFix": false,
+            "workspace": workspace.to_string_lossy(),
+            "badDirs": [],
+            "chownCommand": null,
+            "platformSupported": cfg!(unix),
+        }));
+    }
+
+    #[cfg(not(unix))]
+    {
+        return Ok(json!({
+            "exists": true,
+            "needsFix": false,
+            "workspace": workspace.to_string_lossy(),
+            "badDirs": [],
+            "chownCommand": null,
+            "platformSupported": false,
+        }));
+    }
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        // 取当前用户 uid：用 $HOME 目录的 uid 作为代理(避免引入 libc 直接 dep)。
+        // 桌面端 panel 始终运行在登录用户上下文,$HOME 必然属于该用户。
+        let current_uid = match dirs::home_dir().and_then(|h| fs::metadata(h).ok()) {
+            Some(meta) => meta.uid(),
+            None => {
+                return Ok(json!({
+                    "exists": true,
+                    "needsFix": false,
+                    "workspace": workspace.to_string_lossy(),
+                    "badDirs": [],
+                    "chownCommand": null,
+                    "platformSupported": true,
+                    "warning": "无法确定当前用户 uid，跳过权限检查",
+                }));
+            }
+        };
+        let mut bad_dirs: Vec<Value> = Vec::new();
+        // 同时检查 workspace 根目录与已知关键子目录；只检查存在的项
+        let mut targets: Vec<PathBuf> = vec![workspace.clone()];
+        for sub in ["scripts", "skills", "memory", ".clawhub", "media", "tmp"] {
+            let p = workspace.join(sub);
+            if p.exists() {
+                targets.push(p);
+            }
+        }
+        for path in &targets {
+            if let Ok(meta) = fs::metadata(path) {
+                let uid = meta.uid();
+                if uid != current_uid {
+                    bad_dirs.push(json!({
+                        "path": path.to_string_lossy(),
+                        "ownerUid": uid,
+                        "currentUid": current_uid,
+                    }));
+                }
+            }
+        }
+
+        let needs_fix = !bad_dirs.is_empty();
+        let chown_command = if needs_fix {
+            Some(format!(
+                "sudo chown -R $(whoami):staff {}",
+                workspace.to_string_lossy()
+            ))
+        } else {
+            None
+        };
+
+        Ok(json!({
+            "exists": true,
+            "needsFix": needs_fix,
+            "workspace": workspace.to_string_lossy(),
+            "badDirs": bad_dirs,
+            "chownCommand": chown_command,
+            "platformSupported": true,
+        }))
+    }
+}
+
+/// 在系统文件管理器里打开 ~/.openclaw/workspace/。
+/// macOS：open / Linux：xdg-open / Windows：explorer。
+/// 不存在时先 mkdir -p 兜底（OpenClaw 首次启动可能还没有这个目录）。
+#[tauri::command]
+pub async fn open_workspace_folder() -> Result<String, String> {
+    let workspace = super::openclaw_dir().join("workspace");
+    if !workspace.exists() {
+        fs::create_dir_all(&workspace)
+            .map_err(|e| format!("创建 workspace 目录失败: {e}"))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    let mut cmd = Command::new("open");
+
+    #[cfg(target_os = "linux")]
+    let mut cmd = Command::new("xdg-open");
+
+    #[cfg(target_os = "windows")]
+    let mut cmd = {
+        let mut c = Command::new("explorer");
+        use std::os::windows::process::CommandExt;
+        c.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        c
+    };
+
+    cmd.arg(&workspace)
+        .spawn()
+        .map_err(|e| format!("打开文件管理器失败: {e}"))?;
+    Ok(workspace.to_string_lossy().to_string())
+}
+
 /// 运行 openclaw doctor --fix 自动修复配置问题
 #[tauri::command]
 pub async fn doctor_fix() -> Result<Value, String> {
