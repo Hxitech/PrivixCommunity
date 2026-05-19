@@ -6,7 +6,46 @@
 
 ## [Unreleased]
 
-聚合 sync/invest-2026-05 与 sync/invest-2026-06 两批次同步,发版时合并到下一个 -ce 版本号。
+聚合 sync/invest-2026-05、sync/invest-2026-06、sync/invest-2026-07 三批次同步,发版时合并到下一个 -ce 版本号。
+
+---
+
+### sync/invest-2026-07 — OpenClaw 5.12 内核兼容 + Dashboard 启动性能 + chat 路由守卫
+
+聚焦"已有功能 fix + 性能 + 安全",从 invest `77b7ca3` (v1.10.14 上游 v0.16.0 17 cherry-pick) 摘取 P0 内核兼容 + P1 UX/稳定子项。**跳过**视觉个性化、Hermes 独占新功能(provider 自愈 / hermes_capabilities / 安装诊断 / Qwen rename — CE 无 backend)、推荐版本号 bump(CE baseline 自决)。
+
+#### ⚠ 内核兼容(P0,必做)
+
+- **Gateway 握手协议 v4 支持**(同步自 invest `77b7ca3` 的 `8b690cb` cherry-pick):panel connect frame 声明 `[minProtocol=3, maxProtocol=4]`,同时兼容旧内核(OpenClaw < 2026.5.12)和新内核(>= 2026.5.12,`MIN_CLIENT_PROTOCOL_VERSION=4`)。
+  - `src-tauri/src/commands/device.rs`:`create_connect_frame` 加 `maxProtocol: 4`
+  - `src/lib/ws-client.js`:加 `negotiatedProtocol` getter(从 hello payload 读 + 按 serverVersion 推断)
+- **chat delta `replace=true` 语义**(同上):新版增量协议下 `replace=true` 表示完整覆盖意图(回滚 / 重排),无条件采用 snapshotText。
+  - `src/lib/chat-event-compat.js`:`normalizeGatewayChatEvent` delta 分支加 `isReplace` 早期路径
+- **feature gates 占位**:加 `FEATURE_PROTOCOL_V4_HANDSHAKE` / `FEATURE_CHAT_DELTA_REPLACE` 常量(`2026.5.12`)
+- **版本 suffix 级补丁检测**(同 `77b7ca3` 的 `dcafd29`):`versions_match` / `recommended_is_newer` 修正,zh.1 → zh.2 这类 suffix 级补丁升级不再被误标"已是最新"。**未升 CE baseline 推荐版**(保持 2026.4.12,与 invest 商业版的 5.12 baseline 分离)
+
+#### 修复
+
+- **chat 路由切换守卫**(同 `77b7ca3` 的 `f411386` cherry-pick):异步流式输出 / hosted history / system error 可能在用户切走 chat 后才到达,此时 `_messagesEl` 仍引用旧 DOM 但已不在文档树。5 处加 `isConnected` 守卫(`createStreamBubble` / `renderChatGroup` / `appendSystemMessage` / 2 处 `handleChatEvent` 调用 createStreamBubble 后),避免给死 DOM 累积内容污染缓存
+- **主模型不存在自愈**(同 `77b7ca3` 的 `9742786`):`dashboard.js` 加 `collectConfigModels` / `defaultModelNeedsNormalization` / `normalizeDefaultModelConfig` 三个 helper,检测 `agents.defaults.model.primary` 指向已删除 provider/model 时自动切到合法模型 + 清 fallbacks 死引用 + 同步 `agents.defaults.models` 字典。没有这个自愈,用户删除一个 provider 后 Gateway 启动所有 agent 拿不到主模型,聊天直接报错
+
+#### 性能
+
+- **Dashboard 启动性能**(同 `77b7ca3` 的 `2f7cd6d`):`getVersionInfo()`(可能 spawn CLI / 查 npm registry,慢)拉到独立 Promise,首屏渲染不再等它,版本到达后异步刷新卡片
+- **Dashboard 核心请求 timeout 缩短**(同 `77b7ca3` 的 `322bf1a`):`getServicesStatus` 12s → 2.5s,`readOpenclawConfig` 5s → 2s。慢请求由后台兜底而不是阻塞首屏
+- **Dashboard 1.2s 首屏兜底**(同 `322bf1a`):任何 API 仍未返回时,把骨架替换为空状态卡片避免死锁
+- **模块级版本缓存** `_dashboardVersionCache`:历史版本数据保留,兜底渲染时仍能展示
+
+#### 同步追踪
+
+- 已 port:`77b7ca3` 部分摘取(8b690cb / dcafd29 部分 / 9742786 / 322bf1a / 2f7cd6d / f411386 共 6 个子 cherry-pick)
+- 跳过:推荐版本号 5.7→5.12(CE 自决 baseline)/ Services/About "升级到最新版" 按钮 / 协议徽标 UI / 助手按引擎切换身份 / Hermes Rust/install fix(provider 自愈、互斥锁、hermes_capabilities、安装诊断、Qwen rename — CE 无 Hermes provider 系统前置)/ Windows Gateway 可见终端选项(Privix 独有)/ feature gates 中 `FEATURE_CLAWHUB_RETRY` 等中间常量(CE 缺这些版本基线)
+- 跳过批次:`ff7f8da` / `7815d9f` / `6bcc8e6` / `9918fca`(多安装管理,CE 无)/ `ebcc8cd` / `bbf1318`(Hermes backend,CE 无前置)/ 视觉 `a8d299d` / `8a74149` / `1f6aab8`
+
+#### 下批候选
+
+- `cdda719` Module B:workspace 权限自检 + `check_workspace_permissions` Rust 命令(纯 fix,~350 LOC,适合独立批次)
+- `77b7ca3` 剩余:`models.js` 主模型自愈完整版(154 行 diff,补 dashboard 简版未覆盖的 toast + fallbacks dedupe)、`settings.js` Windows 终端选项、`assistant.js` 引擎切换身份、`about.js` / `services.js` "升级到最新版"按钮(评估后)
 
 ---
 

@@ -79,6 +79,34 @@ export class WsClient {
   get sessionKey() { return this._sessionKey }
   get preferredSessionKey() { return this._preferredSessionKey }
   get serverVersion() { return this._serverVersion }
+  /**
+   * 当前 Gateway 与面板协商出的握手协议版本 (3 或 4)。
+   *
+   * ⚠️ 注意:这里的 "协议版本" 指 Gateway WebSocket 握手帧协议 (kernel ws frame protocol),
+   * 不要与 device.rs 的 v3 payload schema 混淆 — 后者是 device-signature payload 字符串格式版本,
+   * 两者完全独立。
+   *
+   * 取值优先级:
+   *   1. hello payload 中显式回传的 protocol / protocolVersion / negotiatedProtocol 字段
+   *   2. 按 serverVersion 推断:OpenClaw 内核 >= 2026.5.12 → v4,否则 v3
+   *      (面板永远声明 minProtocol=3, maxProtocol=4,所以协商只会是 3 或 4)
+   *
+   * 未握手时返回 null。
+   */
+  get negotiatedProtocol() {
+    const fromHello = this._hello?.protocol ?? this._hello?.protocolVersion ?? this._hello?.negotiatedProtocol
+    if (typeof fromHello === 'number' && Number.isFinite(fromHello)) return fromHello
+    if (!this._serverVersion) return null
+    // 推断:OpenClaw 内核 2026.5.12+ 升级 MIN_CLIENT_PROTOCOL_VERSION=4,推断为 v4
+    const base = String(this._serverVersion).split('-')[0].split('.').map(n => parseInt(n, 10))
+    if (base.length >= 3 && Number.isFinite(base[0]) && Number.isFinite(base[1]) && Number.isFinite(base[2])) {
+      const [y, m, d] = base
+      // 2026.5.12 之前 → v3;之后 → v4
+      if (y > 2026 || (y === 2026 && m > 5) || (y === 2026 && m === 5 && d >= 12)) return 4
+      return 3
+    }
+    return 3
+  }
   get reconnectState() { return this._reconnectState }
   get reconnectAttempts() { return this._reconnectAttempts }
   get lastConnectedAt() { return this._lastConnectedAt }

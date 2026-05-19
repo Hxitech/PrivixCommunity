@@ -13,6 +13,8 @@ import { icon } from '../lib/icons.js'
 let _unsubGw = null
 let _loadInFlight = false
 let _lastGwChangeLoad = 0
+// 版本信息可能慢(spawn CLI / 查 npm registry),作为模块级缓存让兜底渲染时仍能展示历史数据
+let _dashboardVersionCache = null
 const _guardianBannerUnmounters = []
 
 export async function render() {
@@ -56,6 +58,18 @@ export async function render() {
   // 异步加载数据
   loadDashboardData(page)
 
+  // 1.2s 首屏兜底:任何 dashboard API 仍未返回时,把骨架替换为 "未知状态" 卡片避免死锁
+  // (对标 upstream 322bf1a:慢版本检查 / agent 扫描 / MCP 读 / 备份 / channel 发现 / 日志 tail 任一卡住都不再永远空白)
+  setTimeout(() => {
+    if (!page.isConnected) return
+    const cardsEl = page.querySelector('#stat-cards')
+    if (cardsEl && cardsEl.querySelector('.loading-placeholder')) {
+      console.warn('[dashboard] 首屏兜底:dashboard API 仍在加载,先渲染空状态')
+      renderStatCards(page, [], _dashboardVersionCache || {}, [], null)
+      renderLogs(page, '')
+    }
+  }, 1200)
+
   // Module D: Guardian banner — give_up 时显示根因 + 手动重启按钮。
   // 同一会话内可能多次 render(切回 dashboard),先清上一轮 unmounters 再挂新的,
   // 避免 cleanup 时清的是旧实例、留下当前实例的 listener。
@@ -92,6 +106,78 @@ export function cleanup() {
   }
 }
 
+/**
+ * 收集 OpenClaw 配置中所有 provider/model 的合法 "providerKey/modelId" 列表。
+ * 用于判断 agents.defaults.model.primary / fallbacks 是否还指向真实存在的模型。
+ */
+function collectConfigModels(config) {
+  const result = []
+  const providers = config?.models?.providers || {}
+  for (const [providerKey, provider] of Object.entries(providers)) {
+    for (const model of (provider?.models || [])) {
+      const id = typeof model === 'string' ? model : model?.id
+      if (id) result.push(`${providerKey}/${id}`)
+    }
+  }
+  return result
+}
+
+/**
+ * 检测 agents.defaults.model 是否需要归一化(primary/fallbacks 指向死模型、含重复或孤儿 entry)。
+ */
+function defaultModelNeedsNormalization(config) {
+  const validModels = new Set(collectConfigModels(config))
+  const modelConfig = config?.agents?.defaults?.model || {}
+  const primary = modelConfig.primary || ''
+  const fallbacks = Array.isArray(modelConfig.fallbacks) ? modelConfig.fallbacks : []
+  if (!validModels.size) return !!primary || fallbacks.length > 0 || Object.keys(config?.agents?.defaults?.models || {}).length > 0
+  if (!validModels.has(primary)) return true
+  if (fallbacks.some(f => f === primary || !validModels.has(f))) return true
+  return Object.keys(config?.agents?.defaults?.models || {}).some(key => !validModels.has(key))
+}
+
+/**
+ * 把 agents.defaults.model.primary 修正到合法模型;清掉 fallbacks 里的死模型/重复;
+ * 同时同步 agents.defaults.models 这个 per-model 配置字典(只保留 primary + 合法 fallbacks)。
+ *
+ * 触发条件:用户删除一个 provider 后,defaults.primary 仍指向已被删除的 provider/model。
+ * 没有这个自愈,Gateway 启动后所有 agent 会拿不到主模型,聊天直接报错。
+ */
+function normalizeDefaultModelConfig(config) {
+  const allModels = collectConfigModels(config)
+  const validModels = new Set(allModels)
+  if (!config.agents) config.agents = {}
+  if (!config.agents.defaults) config.agents.defaults = {}
+  if (!config.agents.defaults.model) config.agents.defaults.model = {}
+  const modelConfig = config.agents.defaults.model
+  if (!Array.isArray(modelConfig.fallbacks)) modelConfig.fallbacks = []
+  if (!allModels.length) {
+    modelConfig.primary = ''
+    modelConfig.fallbacks = []
+    config.agents.defaults.models = {}
+    return ''
+  }
+  if (!validModels.has(modelConfig.primary || '')) {
+    modelConfig.primary = modelConfig.fallbacks.find(f => validModels.has(f)) || allModels[0]
+  }
+  const seen = new Set([modelConfig.primary])
+  modelConfig.fallbacks = modelConfig.fallbacks
+    .filter(f => validModels.has(f))
+    .filter(f => {
+      if (seen.has(f)) return false
+      seen.add(f)
+      return true
+    })
+  const currentMap = config.agents.defaults.models && typeof config.agents.defaults.models === 'object' && !Array.isArray(config.agents.defaults.models) ? config.agents.defaults.models : {}
+  const nextMap = {}
+  nextMap[modelConfig.primary] = currentMap[modelConfig.primary] && typeof currentMap[modelConfig.primary] === 'object' && !Array.isArray(currentMap[modelConfig.primary]) ? currentMap[modelConfig.primary] : {}
+  for (const fallback of modelConfig.fallbacks) {
+    nextMap[fallback] = currentMap[fallback] && typeof currentMap[fallback] === 'object' && !Array.isArray(currentMap[fallback]) ? currentMap[fallback] : {}
+  }
+  config.agents.defaults.models = nextMap
+  return modelConfig.primary
+}
+
 async function loadDashboardData(page) {
   // 并发保护：如果上一次加载仍在进行，跳过本次
   if (_loadInFlight) return
@@ -100,12 +186,18 @@ async function loadDashboardData(page) {
 }
 
 async function _loadDashboardDataInner(page) {
-  // 分波加载：关键数据先渲染，次要数据后填充，减少白屏等待
-  // 每个请求独立 withTimeout 包裹,任意慢请求不再拖垮仪表盘
+  // 分波加载:关键数据先渲染,次要数据后填充,减少白屏等待
+  // 对标 upstream 2f7cd6d:版本拉到独立 Promise,首屏渲染不再等它(版本可能 spawn CLI / 查 npm registry,慢)
+  // 对标 upstream 322bf1a:核心请求超时缩到 2-3s,慢请求由后台兜底而不是阻塞首屏
+  const versionP = withTimeout(api.getVersionInfo(), 8000)
+    .then(v => {
+      if (v) _dashboardVersionCache = v
+      return _dashboardVersionCache || {}
+    })
+    .catch(() => _dashboardVersionCache || {})
   const coreP = Promise.allSettled([
-    withTimeout(api.getServicesStatus(), 12000),
-    withTimeout(api.getVersionInfo(), 8000),
-    withTimeout(api.readOpenclawConfig(), 5000),
+    withTimeout(api.getServicesStatus(), 2500),
+    withTimeout(api.readOpenclawConfig(), 2000),
   ])
   const secondaryP = Promise.allSettled([
     withTimeout(api.listAgents(), 10000),
@@ -116,13 +208,23 @@ async function _loadDashboardDataInner(page) {
   ])
   const logsP = api.readLogTail('gateway', 20).catch(() => '')
 
-  // 第一波：服务状态 + 版本 + 配置 → 立即渲染统计卡片
-  const [servicesRes, versionRes, configRes] = await coreP
+  // 第一波:服务状态 + 配置 → 立即渲染统计卡片(版本异步补)
+  const [servicesRes, configRes] = await coreP
   const services = servicesRes.status === 'fulfilled' ? servicesRes.value : []
-  const version = versionRes.status === 'fulfilled' ? (versionRes.value || {}) : {}
+  let version = _dashboardVersionCache || {}
   const config = configRes.status === 'fulfilled' ? configRes.value : null
-  if (servicesRes.status === 'rejected') toast(t('pages.dashboard.toast_services_failed'), 'error')
-  if (versionRes.status === 'rejected') toast(t('pages.dashboard.toast_version_failed'), 'error')
+  let agents = []
+  // 版本到达后异步刷新卡片,不阻塞首屏渲染
+  versionP.then(v => {
+    if (!page.isConnected) return
+    version = v || {}
+    renderStatCards(page, services, version, agents, config)
+  })
+  if (servicesRes.status === 'rejected') {
+    console.warn('[dashboard] getServicesStatus 慢/失败:', servicesRes.reason)
+    toast(t('pages.dashboard.toast_services_failed'), 'error')
+  }
+  if (configRes.status === 'rejected') console.warn('[dashboard] readOpenclawConfig 慢/失败:', configRes.reason)
 
   // 自愈：补全关键默认值
   if (config && typeof config === 'object') {
@@ -138,14 +240,20 @@ async function _loadDashboardDataInner(page) {
       config.tools.sessions.visibility = 'all'
       patched = true
     }
+    // 默认模型自愈:primary/fallbacks 指向已删除 provider/model 时,自动切到合法模型
+    if (defaultModelNeedsNormalization(config)) {
+      normalizeDefaultModelConfig(config)
+      patched = true
+    }
     if (patched) api.writeOpenclawConfig(config).catch(e => console.warn('[dashboard] writeOpenclawConfig:', e))
   }
 
   renderStatCards(page, services, version, [], config)
+  renderLogs(page, '')
 
   // 第二波：Agent、MCP、备份 → 更新卡片 + 渲染总览
   const [agentsRes, mcpRes, backupsRes, statusRes, channelsRes] = await secondaryP
-  const agents = agentsRes.status === 'fulfilled' ? agentsRes.value : []
+  agents = agentsRes.status === 'fulfilled' ? agentsRes.value : []
   const mcpConfig = mcpRes.status === 'fulfilled' ? mcpRes.value : null
   const backups = backupsRes.status === 'fulfilled' ? backupsRes.value : []
   const statusSummary = statusRes.status === 'fulfilled' ? statusRes.value : null

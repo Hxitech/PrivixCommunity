@@ -123,8 +123,15 @@ pub fn create_connect_frame(nonce: String, gateway_token: String) -> Result<Valu
         "id": format!("connect-{:08x}-{:04x}", signed_at as u32, rand::random::<u16>()),
         "method": "connect",
         "params": {
+            // 协议握手范围声明：下限 3 用于继续兼容历史内核，上限 4 启用新版增量 delta 协议。
+            // OpenClaw 内核 2026.5.12+ 升级到 MIN_CLIENT_PROTOCOL_VERSION=4，旧客户端只声明 maxProtocol=3
+            // 时会握手失败；面板用 [3,4] 同时覆盖新旧内核，无需按版本分支。
+            //
+            // ⚠️ 警告：这里的 "v3/v4" 指 Gateway WebSocket 握手帧协议版本，
+            // 与上方 payload_str 前缀 `v3|` (device signature payload 字符串 schema 版本)
+            // 完全独立，互不影响。即使在 v4 握手协议下，签名 payload 仍以 `v3|` 开头。
             "minProtocol": 3,
-            "maxProtocol": 3,
+            "maxProtocol": 4,
             "client": {
                 "id": "openclaw-control-ui",
                 "version": env!("CARGO_PKG_VERSION"),

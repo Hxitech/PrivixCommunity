@@ -103,20 +103,40 @@ fn base_version(v: &str) -> String {
     base.to_string()
 }
 
+fn has_version_suffix(v: &str) -> bool {
+    v.contains('-')
+}
+
 /// 判断 CLI 报告的版本是否与推荐版匹配（考虑汉化版 -zh.x 后缀差异）
 fn versions_match(cli_version: &str, recommended: &str) -> bool {
     if cli_version == recommended {
         return true;
     }
     // CLI 报告 "2026.3.13"，推荐版 "2026.3.13-zh.1" → 基础版本相同即视为匹配
-    base_version(cli_version) == base_version(recommended)
+    if base_version(cli_version) != base_version(recommended) {
+        return false;
+    }
+    // 当 CLI 报告了带后缀的版本（例如 "2026.5.12-zh.1"）而推荐版没有(或不同后缀)，
+    // 不能视为匹配，否则 zh.1 → zh.2 这类 suffix 级补丁升级会被错误地标记为"已是最新"
+    if has_version_suffix(cli_version) {
+        return false;
+    }
+    true
 }
 
-/// 判断推荐版是否真的比当前版本更新（忽略 -zh.x 后缀）
+/// 判断推荐版是否真的比当前版本更新（base 不同则按 base 比，base 相同则按完整 suffix 比）
 fn recommended_is_newer(recommended: &str, current: &str) -> bool {
     let r = parse_version(&base_version(recommended));
     let c = parse_version(&base_version(current));
-    r > c
+    if r != c {
+        return r > c;
+    }
+    // base 相同时,如果两边都带 suffix(例如 zh.1 vs zh.2),按完整 suffix 比较;
+    // 否则视为同一版本（避免 "2026.5.12" 与 "2026.5.12-zh.2" 互相判更新)
+    if has_version_suffix(recommended) && has_version_suffix(current) {
+        return parse_version(recommended) > parse_version(current);
+    }
+    false
 }
 
 fn load_version_policy() -> VersionPolicy {

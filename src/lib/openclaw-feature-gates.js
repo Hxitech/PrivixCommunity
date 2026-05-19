@@ -9,6 +9,12 @@ export const FEATURE_QWEN_DASHSCOPE = '2026.3.23'
 export const FEATURE_CONTAINER_MODE = '2026.3.24'
 export const FEATURE_DISCORD_AUTO_THREAD = '2026.3.24'
 export const FEATURE_NODE_PREFLIGHT = '2026.3.24'
+// OpenClaw 2026.5.12 — Gateway 握手协议升级到 v4 (MIN_CLIENT_PROTOCOL_VERSION=4),
+// 新增增量 chat delta payloads(replace=true 时无条件覆盖,处理内容回滚/重排)。
+// 面板侧用 connect frame `[minProtocol=3, maxProtocol=4]` 同时兼容新旧内核。
+export const FEATURE_PROTOCOL_V4_HANDSHAKE = '2026.5.12'
+// OpenClaw 2026.5.12 — chat delta 协议支持 replace 语义,允许文本回滚/重排
+export const FEATURE_CHAT_DELTA_REPLACE = '2026.5.12'
 
 // 缓存当前检测到的 OpenClaw 版本
 let _cachedVersion = null

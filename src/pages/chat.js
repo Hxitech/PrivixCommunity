@@ -1312,6 +1312,8 @@ function handleChatEvent(payload) {
       if (!_currentAiBubble) {
         _currentRunId = payload.runId
         _currentAiBubble = createStreamBubble()
+        // createStreamBubble 返回 null 表示页面已被切走,放弃本次气泡创建(避免后续 setText 给死 DOM 累积)
+        if (!_currentAiBubble) return
         _isStreaming = true
         _streamStartTime = Date.now()
         updateSendState()
@@ -1391,6 +1393,8 @@ function handleChatEvent(payload) {
     if (!_currentAiBubble && hasContent) {
       _currentRunId = payload.runId
       _currentAiBubble = createStreamBubble()
+      // createStreamBubble 返回 null = 页面已切走,放弃 final 渲染(history 持久化在其他路径完成)
+      if (!_currentAiBubble) return
     }
     console.debug('[chat] final normalized', {
       runId,
@@ -1530,6 +1534,9 @@ function renderFinalMessageContent(message, wrap = _currentAiWrap, bubble = _cur
 
 /** 创建流式 AI 气泡 */
 function createStreamBubble() {
+  // 路由切换守卫(对标 upstream f411386):异步 history/hosted 输出可能在用户切走 chat 后才到达,
+  // 此时 _messagesEl 仍引用旧 DOM 但已不在文档树中,强行 insert 会被静默丢弃,缓存却被污染。
+  if (!_messagesEl?.isConnected || !_typingEl?.isConnected) return null
   showTyping(false)
   const rendered = renderChatMessage({
     id: _currentRunId || `stream-${Date.now()}`,
@@ -1993,6 +2000,10 @@ function renderMessageBody(bubble, message) {
 }
 
 function renderChatGroup(group, { autoScroll = true } = {}) {
+  // 路由切换守卫(对标 upstream f411386):异步 history / hosted output 可能在用户切走 chat 后才到达,
+  // 此时 _messagesEl 仍引用旧 DOM(GC 还没回收)但已不在文档树中,_messagesEl.insertBefore 会被静默丢弃。
+  // 返回 { wrap: null, bubble: null, meta: null } 让调用方早退,避免后续给死 DOM 节点累积内容。
+  if (!_messagesEl?.isConnected) return { wrap: null, bubble: null, meta: null }
   const messages = Array.isArray(group?.messages) && group.messages.length
     ? group.messages.map(message => normalizeChatMessage(message))
     : [normalizeChatMessage(group)]
@@ -2163,6 +2174,8 @@ function showLightbox(src) {
 }
 
 function appendSystemMessage(text) {
+  // 路由切换守卫(对标 upstream f411386):异步流式输出 / system error 可能在用户切走 chat 后才到达
+  if (!_messagesEl?.isConnected || !_typingEl?.isConnected) return
   const wrap = document.createElement('div')
   wrap.className = 'msg msg-system'
   wrap.textContent = text

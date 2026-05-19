@@ -163,9 +163,14 @@ export function normalizeGatewayChatEvent(payload, previousText = '') {
   const incrementalText = incrementalExtracted.text
   const snapshotText = messageContent.text || payloadContent.text
 
+  // 增量 delta 协议(OpenClaw 2026.5.12+ v4 握手):当对端带 replace=true 时,snapshotText 是完整覆盖意图,
+  // 必须无条件采用(即使比当前缓存短,例如内容回滚或重排场景),否则会因长度判断丢失最新内容。
+  const isReplace = payload?.replace === true
   let text = previousText
   if (state === 'delta') {
-    if (incrementalText) {
+    if (isReplace && snapshotText) {
+      text = snapshotText
+    } else if (incrementalText) {
       text = previousText + incrementalText
     } else if (!previousText) {
       text = snapshotText
