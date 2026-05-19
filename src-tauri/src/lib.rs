@@ -243,18 +243,8 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("启动 Privix 失败")
-        .run(|_app, event| {
-            if let tauri::RunEvent::Exit = event {
-                #[cfg(target_os = "windows")]
-                {
-                    // 退出时关闭 Gateway 终端窗口
-                    use std::os::windows::process::CommandExt;
-                    const CREATE_NO_WINDOW: u32 = 0x08000000;
-                    let _ = std::process::Command::new("cmd")
-                        .args(["/c", "taskkill", "/fi", "WINDOWTITLE eq OpenClaw Gateway"])
-                        .creation_flags(CREATE_NO_WINDOW)
-                        .output();
-                }
-            }
-        });
+        // 同步上游 v0.15.3:退出/关机阶段不再启动外部清理进程,
+        // 避免 Windows 关机时新进程初始化失败导致 0xc0000142 弹窗。
+        // 接受 Gateway 终端窗口残留(下次启动覆盖,或用户手动关闭)。
+        .run(|_app, _event| {});
 }

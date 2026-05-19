@@ -7,7 +7,7 @@ import { t } from '../../../lib/i18n.js'
 import { api } from '../../../lib/tauri-api.js'
 import { renderMarkdown } from '../../../lib/markdown.js'
 
-function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+import { escapeHtml as escHtml } from '../../../lib/escape.js'
 
 export function render() {
   const el = document.createElement('div')

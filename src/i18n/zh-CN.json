@@ -5200,7 +5200,10 @@
     "download_from_website": "前往官网下载",
     "download_from_github": "GitHub 下载",
     "dismiss_version": "忽略此版本",
-    "toast_oauth_provider_repaired": "已自动修复 AI Provider 配置（清理了未完成 OAuth 的 Provider 残留）"
+    "toast_oauth_provider_repaired": "已自动修复 AI Provider 配置（清理了未完成 OAuth 的 Provider 残留）",
+    "boot_failed_title": "启动失败",
+    "boot_failed_hint": "初始化时遇到错误,请尝试重启应用。如反复出现,请提供下方日志反馈。",
+    "boot_failed_retry": "重试"
   },
   "ai_quick_config": {
     "system_assistant": "钳子医生",
@@ -5330,8 +5333,13 @@
         "eacces": "文件权限不足。多半是 ~/.openclaw 目录所有权异常,试试 Channel 页的\"健康检查\"按钮一键诊断。",
         "syntax": "OpenClaw 配置文件语法错误。运行 `openclaw doctor --fix` 自动修复,或在 ~/.openclaw/openclaw.json 检查 JSON 语法。",
         "module": "OpenClaw 缺少必要 Node 模块。试 Plugin Hub 的\"一键修复\"按钮重装依赖。",
-        "generic": "请查看 ~/.openclaw/logs/gateway.err.log 获取详细错误,或点\"诊断 Gateway\"按钮做完整连通性检查。"
-      }
+        "generic": "请查看 ~/.openclaw/logs/gateway.err.log 获取详细错误,或点\"诊断 Gateway\"按钮做完整连通性检查。",
+        "network": "外部依赖连接失败(数据库 / 向量库 / API)。检查网络连通性,或在「Plugin Hub」确认依赖服务已启动。",
+        "fdlimit": "系统文件描述符耗尽(EMFILE/ENFILE)。临时方案:`ulimit -n 65535`;长期方案需改 `/etc/launchd.conf`(macOS)或 `/etc/security/limits.conf`(Linux)。",
+        "tls": "TLS / 证书校验失败。可能服务器证书过期、自签证书或时间不正确,检查系统时间并核实 OpenClaw 调用的 https 端点。"
+      },
+      "btn_restore_recommended": "回到推荐版本",
+      "btn_restore_recommended_hint": "OpenClaw 版本回退到当前 Panel 的推荐版本(在「关于」页查看)"
     }
   },
   "comp_toast": {

@@ -5,7 +5,7 @@
 import { t } from '../../../lib/i18n.js'
 import { api } from '../../../lib/tauri-api.js'
 
-function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
+import { escapeHtml as escHtml } from '../../../lib/escape.js'
 
 function mdToHtml(text) {
   return text

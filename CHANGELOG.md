@@ -4,7 +4,49 @@
 
 `-ce.N` 后缀表示 Community Edition 的迭代号。
 
-## [Unreleased] — sync/invest-2026-05
+## [Unreleased]
+
+聚合 sync/invest-2026-05 与 sync/invest-2026-06 两批次同步,发版时合并到下一个 -ce 版本号。
+
+---
+
+### sync/invest-2026-06 — 引擎选择 + 升级硬化 + Hermes 卡死探针 + Windows 弹窗
+
+聚焦"已有功能 fix + 性能 + 安全",从 invest v1.10.7 → v1.10.14 之间 24 个新 commit 中摘取 4 个,符合"已有功能"原则。
+
+#### 修复
+
+- **启动引擎选择智能回退**(同步自 invest `df5dd02`):用户误点过 Hermes 主线后,即使 Hermes 未装也每次启动卡在 setup。现在 `engineMode` 持久化为 hermes 但 `checkHermes` 显示未就绪时,本次启动回退 openclaw。不回写 clawpanel.json — 双向自愈。
+- **Hermes 引擎初始化空头支票**(同 `df5dd02`):`activateEngine(persist=false)` 不调 `engine.boot()`,Hermes 模式下 `_ready` 永远 false、15s 轮询从不启动、boot 逻辑误判未就绪重定向到 `/h/setup`。`initEngineManager` 在 mode 最终为 hermes 时补 `hermes.boot()`(10s 超时保护)。
+- **OpenClaw 升级前自动备份**(同步自 invest `47bd66d`,v1.10.8):`upgrade_openclaw_inner` 入口前自动 `create_backup()` `~/.openclaw/openclaw.json`,升级失败 / 新内核写坏配置时可在「备份与恢复」一键回退。
+- **Gateway 卡死探针**(同 `47bd66d` service.rs):`guardian_tick` 在进程在但 `/health` 端点连续 3 次无响应时,视为宕机自动 `reload_gateway`(2s 超时探针,失败累计,成功重置)。消灭"进程没崩但请求全挂"的 silent downtime。
+- **Guardian 根因识别扩展**(同 `47bd66d`):`CONFIG_ERROR_PATTERNS` 加 9 个 ECONNREFUSED / ENOTFOUND / ETIMEDOUT / EMFILE / TLS 证书等模式;guardian-banner 增加 `network` / `fdlimit` / `tls` 三类根因 tip。
+- **Hermes 安装日志脱敏**(同 `47bd66d`):新增 `sanitize_hermes_install_output()`,所有 `hermes-install-log` emit 与错误返回过此层,把 GitHub URL `git+https://...@v2026.5.7` 替换为简洁的 `hermes-agent`,不向用户暴露上游底层细节。
+- **chat.js loadHistory 并发竞态**(同 `47bd66d`):`_loadHistoryGen` 代际计数,连续触发时只保留最后一次的结果,避免抖动 / 重复渲染。
+- **memory.js / skills.js XSS 隐患**(同步自 invest `ca62b5d` 摘取,v1.10.10):本地 `escHtml` 仅转义 `&<>` 缺 `"`/`'` 转义 → 改用 `escape.js#escapeHtml`(覆盖 5 字符),与 `sync-05` 的 channels.js / services.js 修复同源。
+- **Windows 关机阶段 0xc0000142 弹窗**(同步自 invest `8bfc138`,v1.10.9 / 上游 v0.15.3):删除 `RunEvent::Exit` 的 Windows shutdown handler。旧实现在退出阶段启动 `cmd /c taskkill` 关闭 Gateway 终端窗口,Windows 关机阶段 cmd.exe DLL 初始化失败触发弹窗。接受 Gateway 终端窗口残留换取零 popup。
+
+#### 性能 / 内存
+
+- **boot Promise.all 并发拉平**(同 `47bd66d` main.js):`ensureWebSession` / `loadActiveInstance` / `detectOpenclawStatus` 三路改为并发,而非 then 串接。
+- **boot 兜底**(同 `47bd66d` main.js):主链路任何环节抛错都兜底显示错误 UI + 重试按钮,而不是 splash 永久挂死。
+- **`readOpenclawConfig` / `readMcpConfig` TTL 15→60s**(同 `47bd66d`):减少冷启动 4× RPC 重复调用。
+- **`assistant.js` streaming visibility 联动**(同 `47bd66d`):用户切到其他 Tab/窗口时跳过 markdown 重渲,省主线程。
+- **`cron.js render` 去 `await`**(同 `47bd66d`):违反 render 立即返回 DOM 准则,改 fire-and-forget 让 `fetchJobs` 后台跑。
+
+#### Guardian Banner UX
+
+- **"回到推荐版本"自救按钮**(同 `47bd66d`):give_up 状态下新增按钮直跳 `/about` 页,用户可见推荐 OpenClaw 版本 + 切换按钮。
+
+#### 同步追踪
+
+- 已 port:`df5dd02`(完整)/ `47bd66d`(摘取 22 文件)/ `8bfc138`(lib.rs 唯一实质改动)/ `ca62b5d`(memory/skills.js XSS 摘取)
+- 跳过:`star-office.js`(CE 无)、`automation.js`(CE 无)、`tests/openclaw-version-policy.test.js`(CE 无)、`run_openclaw_compat_repair_after_upgrade`(CE 无该函数)、`openclaw-version-policy.json`(CE baseline 2026.4.12)
+- 跳过批次(不符合"已有功能 fix"原则):`77b7ca3`(上游 v0.16.0 17 cherry-pick,需独立批次评估)/ `ebcc8cd`(Hermes 流式 fallback,CE 无 backend 前置)/ `bbf1318`(依赖 CE 没有的 Hermes responses API)/ `ff7f8da` / `7815d9f` / `6bcc8e6` / `9918fca`(多安装管理 — CE 无此 feature)/ 视觉新功能 `a8d299d` / `8a74149` / `1f6aab8`(persona / hero / F6 channel modal)
+
+---
+
+### sync/invest-2026-05 — 关键安全升级 + 基础设施修复
 
 从商业版 ClawPanelInvest(v1.10.7)同步通用 fix。本批仅包含**关键安全升级 + 基础设施修复**,功能性同步(Hermes 三大运维页、渠道治理 UX、provider OAuth 等)将分批次进行。
 

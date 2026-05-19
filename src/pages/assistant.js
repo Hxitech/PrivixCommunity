@@ -1357,6 +1357,8 @@ function flushSave() {
 // 当用户切页面再回来时，轮询刷新最后一个 AI 气泡内容
 function refreshStreamingBubble() {
   if (!_messagesEl || !_isStreaming) return
+  // 文档不可见(用户切到其他窗口/Tab)时跳过 markdown 重渲,省主线程
+  if (typeof document !== 'undefined' && document.hidden) return
   const session = getCurrentSession()
   if (!session) return
   const lastMsg = session.messages[session.messages.length - 1]

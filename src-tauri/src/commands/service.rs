@@ -66,6 +66,9 @@ const GUARDIAN_INTERVAL: Duration = Duration::from_secs(15);
 const GUARDIAN_RESTART_COOLDOWN: Duration = Duration::from_secs(60);
 const GUARDIAN_STABLE_WINDOW: Duration = Duration::from_secs(120);
 const GUARDIAN_MAX_AUTO_RESTART: u32 = 3;
+/// HTTP /health 探针超时;Gateway 卡死(进程在但不响应)时连续此次数后视为宕机
+const GUARDIAN_HEALTH_PROBE_TIMEOUT: Duration = Duration::from_secs(2);
+const GUARDIAN_HEALTH_PROBE_FAILURES_FOR_KILL: u32 = 3;
 
 #[derive(Debug, Default)]
 struct GuardianRuntimeState {
@@ -79,6 +82,8 @@ struct GuardianRuntimeState {
     /// 触发 give_up 时识别到的配置错误一行(来自 check_gateway_err_log_for_config_error)
     /// 用于前端 banner 给出根因提示(EADDRINUSE/EACCES 等)
     last_config_error: Option<String>,
+    /// 连续 HTTP /health 探针失败次数(进程在但卡死场景);达到阈值触发 kill+restart
+    health_probe_failures: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -414,6 +419,17 @@ fn check_gateway_err_log_for_config_error() -> Option<String> {
         "port already in use",
         "address already in use",
         "permission denied",
+        // v1.10.8 补充:外部依赖连接 / TLS / 文件描述符耗尽
+        "ECONNREFUSED",
+        "ENOTFOUND",
+        "ETIMEDOUT",
+        "EMFILE",
+        "ENFILE",
+        "self signed certificate",
+        "self-signed certificate",
+        "unable to verify the first certificate",
+        "CERT_HAS_EXPIRED",
+        "DEPTH_ZERO_SELF_SIGNED_CERT",
     ];
 
     for line in tail.lines().rev().take(10) {
@@ -426,6 +442,24 @@ fn check_gateway_err_log_for_config_error() -> Option<String> {
     }
 
     None
+}
+
+/// 探测 Gateway HTTP /health 端点;true=活,false=进程在但卡死或不响应
+/// 用于 guardian_tick 检测 silent downtime(进程未崩溃但请求全挂的场景)
+async fn probe_gateway_health() -> bool {
+    let port = crate::commands::gateway_listen_port();
+    let url = format!("http://127.0.0.1:{port}/health");
+    let client = match reqwest::Client::builder()
+        .timeout(GUARDIAN_HEALTH_PROBE_TIMEOUT)
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return true, // 客户端构造失败时不下结论(避免误杀)
+    };
+    match client.get(&url).send().await {
+        Ok(resp) => resp.status().is_success(),
+        Err(_) => false,
+    }
 }
 
 async fn gateway_service_status() -> Result<Option<ServiceStatus>, String> {
@@ -450,7 +484,53 @@ async fn guardian_tick(app: &tauri::AppHandle) {
     };
 
     let ready = snapshot.cli_installed && gateway_config_exists();
-    let running = snapshot.running;
+    // 进程视图(launchctl/systemd 报告)
+    let process_running = snapshot.running;
+
+    // 卡死探测:进程在但 /health 长时间无响应 → 视为宕机,触发 kill+restart
+    // 仅在 ready + process_running 时跑探针,避免无意义请求
+    let mut force_kill_for_unresponsive = false;
+    let running = if ready && process_running {
+        let healthy = probe_gateway_health().await;
+        let mut state = guardian_state().lock().unwrap();
+        if healthy {
+            state.health_probe_failures = 0;
+            true
+        } else {
+            state.health_probe_failures = state.health_probe_failures.saturating_add(1);
+            if state.health_probe_failures >= GUARDIAN_HEALTH_PROBE_FAILURES_FOR_KILL {
+                guardian_log(&format!(
+                    "Gateway 进程在但 /health 连续 {} 次无响应,触发 kill+restart",
+                    state.health_probe_failures
+                ));
+                force_kill_for_unresponsive = true;
+                state.health_probe_failures = 0;
+                false // 把 running 视为 false,走下面的 restart 流程
+            } else {
+                guardian_log(&format!(
+                    "Gateway /health 探针失败 ({}/{})",
+                    state.health_probe_failures, GUARDIAN_HEALTH_PROBE_FAILURES_FOR_KILL
+                ));
+                true // 还在阈值内,保持 running 视图
+            }
+        }
+    } else {
+        // 进程未跑或未 ready:重置探针计数
+        let mut state = guardian_state().lock().unwrap();
+        state.health_probe_failures = 0;
+        process_running
+    };
+
+    // 卡死场景:直接走 reload_gateway(macOS launchctl kickstart -k / Linux+Windows
+    // restart_service),它会原子完成 kill+start。下面的标准 restart 流程仍会跑,
+    // 计入 auto_restart_count 以便最终 give_up 兜底
+    if force_kill_for_unresponsive {
+        match crate::commands::config::reload_gateway().await {
+            Ok(msg) => guardian_log(&format!("卡死恢复: {msg}")),
+            Err(e) => guardian_log(&format!("卡死恢复失败: {e}")),
+        }
+    }
+
     let now = Instant::now();
     let (restart_attempt, emit_give_up) = {
         let mut state = guardian_state().lock().unwrap();

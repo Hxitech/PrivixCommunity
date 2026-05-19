@@ -4909,7 +4909,10 @@
     "download_from_website": "Download from Website",
     "download_from_github": "Download from GitHub",
     "dismiss_version": "Dismiss this version",
-    "toast_oauth_provider_repaired": "AI provider config auto-repaired (cleared OAuth provider residue)"
+    "toast_oauth_provider_repaired": "AI provider config auto-repaired (cleared OAuth provider residue)",
+    "boot_failed_title": "Startup failed",
+    "boot_failed_hint": "An error occurred during initialization. Please retry. If it persists, share the log below for support.",
+    "boot_failed_retry": "Retry"
   },
   "ai_quick_config": {
     "system_assistant": "Claw Doctor",
@@ -5330,8 +5333,13 @@
         "eacces": "Permission denied. Likely an ownership issue under ~/.openclaw — try the \"Health check\" button on the Channel page for a one-click diagnosis.",
         "syntax": "OpenClaw configuration syntax error. Run `openclaw doctor --fix` for auto-repair, or check JSON syntax in ~/.openclaw/openclaw.json.",
         "module": "OpenClaw is missing a required Node module. Try the \"Repair\" button on the Plugin Hub page to reinstall dependencies.",
-        "generic": "Check ~/.openclaw/logs/gateway.err.log for details, or click \"Diagnose Gateway\" for a full connectivity test."
-      }
+        "generic": "Check ~/.openclaw/logs/gateway.err.log for details, or click \"Diagnose Gateway\" for a full connectivity test.",
+        "network": "External dependency connection failed (DB / vector store / API). Check connectivity, or confirm the dependency service is started in Plugin Hub.",
+        "fdlimit": "System file-descriptor limit exhausted (EMFILE/ENFILE). Quick fix: `ulimit -n 65535`. Long-term: edit `/etc/launchd.conf` (macOS) or `/etc/security/limits.conf` (Linux).",
+        "tls": "TLS / certificate validation failed. The endpoint cert may be expired, self-signed, or the system clock may be wrong. Verify both."
+      },
+      "btn_restore_recommended": "Restore recommended",
+      "btn_restore_recommended_hint": "Roll OpenClaw back to the recommended version for the current Panel (visible on the About page)"
     }
   },
   "comp_toast": {

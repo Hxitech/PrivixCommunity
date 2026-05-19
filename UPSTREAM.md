@@ -73,7 +73,11 @@ CE 独有的差异化功能,明确社区版与商业版的切分:
 | `sync/invest-2026-05` | `74a7f08` (v1.10.0) 摘取 | Hermes 三大运维页(channels/services/config)落地 + `hermes_list_channels` / `hermes_set_channel_enabled` Rust 命令 + 通用化 `check_platform_enabled` / `patch_yaml_set_platform_enabled` + 3 个新 lib(gateway-restart-queue / async-button / error-report) + 11 locale × 34 i18n key + 3 comp_toast key。**跳过 models.js / dashboard 使用卡 / hermes_usage_today**(均为新功能而非 fix) | 待 commit |
 | `sync/invest-2026-05` | `71df25e` (v1.10.0) 摘取 | escHtml → escapeHtml 安全修复(channels.js / services.js 属性转义 XSS) + config.js lineHeight 魔法数修复。**跳过 dashboard.js refresh 并行化 / hermes_usage_today 反向扫尾**(我们没 port hermes_usage_today) | 243ea74 |
 | `sync/invest-2026-05` | `cdda719` (v1.10.7) Module A + D | Plugin 冲突主动检测(openclaw-plugin-doctor.js + plugin-hub.js conflict banner)+ Gateway Guardian 状态暴露(service.rs last_config_error + guardian-banner.js + dashboard 挂载)+ 11 locale × 21 key i18n。**跳过 Module B**(workspace 权限自检,涉及新 Rust 命令)、**Module C**(沙箱可视化,涉及新 Rust 命令 + channels.js modal 改)、**Module E**(健康总览 modal,依赖 B/C/D 全部) | f8f1408 |
-| `sync/invest-2026-05` | `18cf7cd` (v1.10.6) Bug 1 摘取 | OAuth Provider Doctor:`openclaw-provider-doctor.js`(216 行)修复 OpenClaw 5.4+ *-portal OAuth 与 API Key sibling 共存导致 fallback chain 全挂的问题。main.js boot hook 24h 节流触发。**跳过 Bug 2**(钳子助手→医生重命名,与 CE 命名状态不对齐)、**Bug 3**(chat 多模态,涉及 hermes_agent_run Rust 改动 + file-utils 新建 + chat.js 改)、**Bug 4**(welcome modal 路由 + version-migration.js 新建) | 待 commit |
+| `sync/invest-2026-05` | `18cf7cd` (v1.10.6) Bug 1 摘取 | OAuth Provider Doctor:`openclaw-provider-doctor.js`(216 行)修复 OpenClaw 5.4+ *-portal OAuth 与 API Key sibling 共存导致 fallback chain 全挂的问题。main.js boot hook 24h 节流触发。**跳过 Bug 2**(钳子助手→医生重命名,与 CE 命名状态不对齐)、**Bug 3**(chat 多模态,涉及 hermes_agent_run Rust 改动 + file-utils 新建 + chat.js 改)、**Bug 4**(welcome modal 路由 + version-migration.js 新建) | a862b71 |
+| `sync/invest-2026-06` | `df5dd02` | 启动引擎选择智能回退 + Hermes 初始化空头支票(`engine-manager.js` +29 行) | 待 commit |
+| `sync/invest-2026-06` | `47bd66d` (v1.10.8) 摘取 | OpenClaw 升级前自动 `create_backup()`(config.rs)+ Gateway `/health` 卡死探针 3 次失败自动 reload(service.rs)+ `CONFIG_ERROR_PATTERNS` 加 9 个模式(ECONNREFUSED/EMFILE/TLS) + Hermes 安装日志 `sanitize_hermes_install_output()`(hermes.rs)+ boot Promise.all 三路并发 + `.catch` 错误 UI 兜底(main.js)+ readOpenclawConfig/readMcpConfig TTL 15→60s + chat.js loadHistory 代际计数 + assistant.js visibility skip + cron.js render 去 await + guardian-banner restore-recommended 按钮 + 11 locale × 8 i18n key。**跳过** star-office.js / automation.js(CE 无)/ openclaw-version-policy.json(CE 自己 baseline)/ run_openclaw_compat_repair_after_upgrade(CE 无该函数) | 待 commit |
+| `sync/invest-2026-06` | `8bfc138` (v1.10.9) | Windows 关机阶段 0xc0000142 弹窗修复:删除 `RunEvent::Exit` 的 Windows shutdown handler(lib.rs -13 行)。同步上游 v0.15.3 | 待 commit |
+| `sync/invest-2026-06` | `ca62b5d` (v1.10.10) 摘取 | Hermes `memory.js` / `skills.js` 本地 `escHtml`(缺 `"`/`'` 转义)→ `escape.js#escapeHtml`,与 sync-05 的 channels/services 修复同源。**跳过 hero.js 提取 / hermes.css 动画去重 / 死资源删除**(均为视觉个性化,CE 未引入对应基线) | 待 commit |
 
 ## 待评估同步项
 
@@ -87,8 +91,10 @@ CE 独有的差异化功能,明确社区版与商业版的切分:
 ### 下一批次候选(评估顺序按价值)
 
 1. **`cdda719`** Module B + C + E:workspace-doctor + check_workspace_permissions Rust 命令 + 沙箱可视化 + 健康总览 modal(channels.js 深度改动 + 2 新 Rust 命令)
-4. **`18cf7cd`** 摘取:provider-doctor / version-migration / chat.js 多模态 — OAuth 引入需评估零遥测白名单
-5. **`7b3a1d9`** 摘取:openclaw-feature-gates 6 个新 gate + Plugin Hub doctor
-6. **`b623c32`** 摘取:chat.js 中文引号 escape 修复 + i18n.js 通用占位符
-7. **`3bbdcda`** 摘取:engine-manager.invalidate fix + i18n memo(页面切换性能)
-8. **`4a52b22`** 摘取:gateway-restart-queue + agent-health circuit-breaker 通用化
+2. **`18cf7cd`** Bug 3:chat 多模态(涉及 hermes_agent_run Rust 改 + file-utils 新建 + chat.js 改)
+3. **`77b7ca3`** 上游 v0.16.0 17 cherry-pick(OpenClaw 5.12 内核兼容 + Hermes 后端 + Windows 终端可选)— 需拆分 case-by-case 评估
+4. **`7b3a1d9`** 摘取:openclaw-feature-gates 6 个新 gate + Plugin Hub doctor
+5. **`b623c32`** 摘取:chat.js 中文引号 escape 修复 + i18n.js 通用占位符
+6. **`3bbdcda`** 摘取:engine-manager.invalidate fix + i18n memo(页面切换性能)
+7. **`4a52b22`** 摘取:gateway-restart-queue + agent-health circuit-breaker 通用化(部分已在 sync-05 port `gateway-restart-queue.js`)
+8. **`ebcc8cd`** Hermes 流式 fallback + Provider 注册表 + Dashboard 生命周期(依赖 CE 没有的 backend)— 完整 port 需大量前置

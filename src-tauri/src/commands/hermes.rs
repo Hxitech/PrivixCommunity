@@ -1161,6 +1161,29 @@ fn extract_uv_tar_gz(data: &[u8], dest: &std::path::Path) -> Result<(), String> 
 const HERMES_TARGET_VERSION: &str = "0.13.0";
 const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git@v2026.5.7";
 
+/// 把安装/升级日志中的 GitHub 仓库路径与版本 tag 替换成简洁的 "hermes-agent",
+/// 避免向用户暴露上游底层细节。所有 hermes-install-log emit 与错误返回均过此层。
+fn sanitize_hermes_install_output(text: &str) -> String {
+    let mut out = text.replace(HERMES_GIT_URL, "hermes-agent");
+    out = out.replace(
+        "https://github.com/NousResearch/hermes-agent.git@v2026.5.7",
+        "hermes-agent",
+    );
+    out = out.replace(
+        "https://github.com/NousResearch/hermes-agent.git",
+        "hermes-agent",
+    );
+    out = out.replace(
+        "https://github.com/NousResearch/hermes-agent",
+        "hermes-agent",
+    );
+    out = out.replace("github.com/NousResearch/hermes-agent.git", "hermes-agent");
+    out = out.replace("github.com/NousResearch/hermes-agent", "hermes-agent");
+    out = out.replace("NousResearch/hermes-agent", "hermes-agent");
+    // 清掉裸 @v2026.5.7 后缀(经过上面替换后可能仍残留在不完整 URL 中)
+    out.replace("@v2026.5.7", "")
+}
+
 /// 通过 uv tool install 安装 Hermes Agent（从 GitHub）
 async fn install_via_uv_tool(
     app: &tauri::AppHandle,
@@ -1202,7 +1225,10 @@ async fn install_via_uv_tool(
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
 
-    let _ = app.emit("hermes-install-log", format!("> uv tool install \"{}\" --python 3.11", pkg));
+    let _ = app.emit(
+        "hermes-install-log",
+        sanitize_hermes_install_output(&format!("> uv tool install \"{}\" --python 3.11", pkg)),
+    );
 
     let child = cmd.spawn().map_err(|e| format!("启动安装进程失败: {e}"))?;
     let output = child
@@ -1216,7 +1242,7 @@ async fn install_via_uv_tool(
     // 逐行输出日志
     for line in stdout.lines().chain(stderr.lines()) {
         if !line.trim().is_empty() {
-            let _ = app.emit("hermes-install-log", line.trim());
+            let _ = app.emit("hermes-install-log", sanitize_hermes_install_output(line.trim()));
         }
     }
 
@@ -1233,7 +1259,7 @@ async fn install_via_uv_tool(
         Err(format!(
             "安装失败 (exit {}): {}",
             output.status.code().unwrap_or(-1),
-            stderr.trim()
+            sanitize_hermes_install_output(stderr.trim())
         ))
     }
 }
@@ -1275,7 +1301,10 @@ async fn install_via_uv_pip(
     } else {
         format!("hermes-agent[{}] @ {}", extras.join(","), HERMES_GIT_URL)
     };
-    let _ = app.emit("hermes-install-log", format!("> uv pip install \"{pkg}\""));
+    let _ = app.emit(
+        "hermes-install-log",
+        sanitize_hermes_install_output(&format!("> uv pip install \"{pkg}\"")),
+    );
 
     let mut pip_cmd = tokio::process::Command::new(uv_path);
     pip_cmd.args(["pip", "install", &pkg]);
@@ -1297,12 +1326,12 @@ async fn install_via_uv_pip(
     let stderr = String::from_utf8_lossy(&pip_out.stderr);
     for line in stdout.lines().chain(stderr.lines()) {
         if !line.trim().is_empty() {
-            let _ = app.emit("hermes-install-log", line.trim());
+            let _ = app.emit("hermes-install-log", sanitize_hermes_install_output(line.trim()));
         }
     }
 
     if !pip_out.status.success() {
-        return Err(format!("pip install 失败: {}", stderr.trim()));
+        return Err(format!("pip install 失败: {}", sanitize_hermes_install_output(stderr.trim())));
     }
 
     let _ = app.emit("hermes-install-log", "✓ pip install 完成");
@@ -2415,7 +2444,7 @@ pub async fn update_hermes(app: tauri::AppHandle) -> Result<String, String> {
     let stderr = String::from_utf8_lossy(&output.stderr);
     for line in stdout.lines().chain(stderr.lines()) {
         if !line.trim().is_empty() {
-            let _ = app.emit("hermes-install-log", line.trim());
+            let _ = app.emit("hermes-install-log", sanitize_hermes_install_output(line.trim()));
         }
     }
 
@@ -2423,7 +2452,7 @@ pub async fn update_hermes(app: tauri::AppHandle) -> Result<String, String> {
         let _ = app.emit("hermes-install-log", "✅ 升级完成");
         Ok("升级完成".into())
     } else {
-        Err(format!("升级失败: {}", stderr.trim()))
+        Err(format!("升级失败: {}", sanitize_hermes_install_output(stderr.trim())))
     }
 }
 

@@ -1878,6 +1878,26 @@ async fn upgrade_openclaw_inner(
     use tauri::Emitter;
     let _guardian_pause = GuardianPause::new("upgrade");
 
+    // 升级前自动快照 openclaw.json,以便升级失败 / 新内核首次启动写坏配置时可一键回退
+    // 不阻塞升级 — backup 失败只 emit 警告(用户可能首次安装,openclaw.json 还不存在)
+    if super::openclaw_dir().join("openclaw.json").exists() {
+        match create_backup() {
+            Ok(meta) => {
+                let name = meta
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("(unknown)");
+                let _ = app.emit(
+                    "upgrade-log",
+                    format!("📸 已自动备份当前配置: {} (升级失败可在「备份与恢复」恢复)", name),
+                );
+            }
+            Err(e) => {
+                let _ = app.emit("upgrade-log", format!("⚠️ 备份失败,继续升级: {e}"));
+            }
+        }
+    }
+
     let current_source = detect_installed_source();
     let pkg_name = npm_package_name(&source);
     let requested_version = version.clone();

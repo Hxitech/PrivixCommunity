@@ -5222,7 +5222,10 @@
     "download_from_website": "Download from Website",
     "download_from_github": "Download from GitHub",
     "dismiss_version": "Dismiss this version",
-    "toast_oauth_provider_repaired": "已自動修復 AI Provider 配置（清理了未完成 OAuth 的 Provider 殘留）"
+    "toast_oauth_provider_repaired": "已自動修復 AI Provider 配置（清理了未完成 OAuth 的 Provider 殘留）",
+    "boot_failed_title": "啟動失敗",
+    "boot_failed_hint": "初始化時遇到錯誤,請嘗試重啟應用。如反復出現,請提供下方日志反饋。",
+    "boot_failed_retry": "重試"
   },
   "ai_quick_config": {
     "system_assistant": "鉗子醫生",
@@ -5352,8 +5355,13 @@
         "eacces": "文件權限不足。多半是 ~/.openclaw 目錄所有權異常,試試 Channel 頁的\"健康檢查\"按鈕一鍵診斷。",
         "syntax": "OpenClaw 配置文件語法錯誤。運行 `openclaw doctor --fix` 自動修復,或在 ~/.openclaw/openclaw.json 檢查 JSON 語法。",
         "module": "OpenClaw 缺少必要 Node 模塊。試 Plugin Hub 的\"一鍵修復\"按鈕重裝依賴。",
-        "generic": "請查看 ~/.openclaw/logs/gateway.err.log 獲取詳細錯誤,或點\"診斷 Gateway\"按鈕做完整連通性檢查。"
-      }
+        "generic": "請查看 ~/.openclaw/logs/gateway.err.log 獲取詳細錯誤,或點\"診斷 Gateway\"按鈕做完整連通性檢查。",
+        "network": "外部依賴連接失敗(數據庫 / 向量庫 / API)。檢查網絡連通性,或在「Plugin Hub」確認依賴服務已啟動。",
+        "fdlimit": "係統文件描述符耗盡(EMFILE/ENFILE)。臨時方案:`ulimit -n 65535`;長期方案需改 `/etc/launchd.conf`(macOS)或 `/etc/security/limits.conf`(Linux)。",
+        "tls": "TLS / 證書校驗失敗。可能服務器證書過期、自籤證書或時間不正確,檢查係統時間並核實 OpenClaw 調用的 https 端點。"
+      },
+      "btn_restore_recommended": "回到推薦版本",
+      "btn_restore_recommended_hint": "OpenClaw 版本回退到當前 Panel 的推薦版本(在「關於」頁查看)"
     }
   },
   "comp_toast": {

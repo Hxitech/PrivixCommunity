@@ -255,9 +255,9 @@ export const api = {
   // 配置（读缓存，写清缓存）
   getVersionInfo: () => cachedInvoke('get_version_info', {}, 30000),
   getStatusSummary: () => cachedInvoke('get_status_summary', {}, 5000),
-  readOpenclawConfig: () => cachedInvoke('read_openclaw_config'),
+  readOpenclawConfig: () => cachedInvoke('read_openclaw_config', {}, 60000),
   writeOpenclawConfig: (config) => { invalidate('read_openclaw_config'); return invoke('write_openclaw_config', { config }) },
-  readMcpConfig: () => cachedInvoke('read_mcp_config'),
+  readMcpConfig: () => cachedInvoke('read_mcp_config', {}, 60000),
   writeMcpConfig: (config) => { invalidate('read_mcp_config'); return invoke('write_mcp_config', { config }) },
   reloadGateway: () => invoke('reload_gateway'),
   restartGateway: () => invoke('restart_gateway'),

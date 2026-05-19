@@ -29,7 +29,7 @@ function getCronShortcuts() {
 
 // ── 页面生命周期 ──
 
-export async function render() {
+export function render() {
   const page = document.createElement('div')
   page.className = 'page'
 
@@ -71,7 +71,8 @@ export async function render() {
   })
 
   updateGatewayHint(page)
-  await fetchJobs(page, state)
+  // 不 await,数据加载放后台,DOM 立即返回(违反 await 会让页面空白 100-400ms)
+  fetchJobs(page, state)
 
   return page
 }

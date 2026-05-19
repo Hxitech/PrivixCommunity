@@ -107,6 +107,8 @@ let _ultimateTimer = null, _sendTimestamp = 0
 let _attachments = []
 let _hasEverConnected = false
 let _availableModels = []
+// loadHistory 调用代际,用于丢弃过期的并发请求结果(避免连续触发时旧请求覆盖新)
+let _loadHistoryGen = 0
 let _primaryModel = ''
 let _selectedModel = ''
 let _isApplyingModel = false
@@ -1733,9 +1735,14 @@ function _cancelUltimateTimer() {
 
 async function loadHistory() {
   if (!_sessionKey) return
+  // 代际计数:同一时间窗内多次触发 loadHistory 时只保留最后一次的结果,避免抖动/重复渲染
+  const myGen = ++_loadHistoryGen
+  const sessionAtStart = _sessionKey
+  const isStale = () => myGen !== _loadHistoryGen || sessionAtStart !== _sessionKey
   let hasExisting = Boolean(_messagesEl?.querySelector('.msg'))
   if (!hasExisting) {
     const local = await getCachedMessages(_sessionKey, 200)
+    if (isStale()) return
     if (local.length) {
       clearMessages()
       const localMessages = local.map(msg => normalizeChatMessage({
@@ -1758,6 +1765,7 @@ async function loadHistory() {
   if (!wsClient.gatewayReady) return
   try {
     const result = await wsClient.chatHistory(_sessionKey, 200)
+    if (isStale()) return
     const visibleMessages = filterVisibleHistory(dedupeHistory(result?.messages || []), _sessionKey)
     const visibleGroups = buildChatMessageGroups(visibleMessages)
     if (!visibleMessages.length) {

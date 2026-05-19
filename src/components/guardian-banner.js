@@ -53,6 +53,15 @@ function configErrorTipKey(errLine) {
   if (lower.includes('cannot find module')) {
     return 'components.guardian_banner.tip.module'
   }
+  if (lower.includes('econnrefused') || lower.includes('enotfound') || lower.includes('etimedout')) {
+    return 'components.guardian_banner.tip.network'
+  }
+  if (lower.includes('emfile') || lower.includes('enfile')) {
+    return 'components.guardian_banner.tip.fdlimit'
+  }
+  if (lower.includes('certificate') || lower.includes('cert_has_expired') || lower.includes('depth_zero_self_signed')) {
+    return 'components.guardian_banner.tip.tls'
+  }
   return 'components.guardian_banner.tip.generic'
 }
 
@@ -85,6 +94,7 @@ function renderBanner(status) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
       <button class="btn btn-pill-filled btn-sm" data-action="manual-restart">${t('components.guardian_banner.btn_manual_restart')}</button>
       <button class="btn btn-pill-outline btn-sm" data-action="open-diagnose">${t('components.guardian_banner.btn_diagnose')}</button>
+      <button class="btn btn-pill-outline btn-sm" data-action="restore-recommended" title="${escapeHtml(t('components.guardian_banner.btn_restore_recommended_hint') || '回到当前 panel 的推荐 OpenClaw 版本')}">${t('components.guardian_banner.btn_restore_recommended')}</button>
       <button class="btn btn-pill-outline btn-sm" data-action="dismiss" style="margin-left:auto">${t('components.guardian_banner.btn_dismiss')}</button>
     </div>
   `
@@ -142,6 +152,9 @@ export function mountGuardianBanner(host, opts = {}) {
           }
         } else if (action === 'open-diagnose') {
           navigate('/diagnose')
+        } else if (action === 'restore-recommended') {
+          // 直跳 about 页,用户可在那里看到推荐版本 + "切换到推荐"按钮
+          navigate('/about')
         }
       })
       if (bannerEl?.isConnected) {

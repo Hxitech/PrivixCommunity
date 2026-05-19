@@ -54,6 +54,11 @@ export function onEngineChange(fn) {
 /**
  * 初始化引擎管理器：读取 clawpanel.json 中的 engineMode，激活对应引擎
  * 在 main.js boot() 中调用
+ *
+ * 智能回退:持久化的 engineMode 是 hermes 但 Hermes 未就绪(未安装/未配置)时,
+ * 回退到 openclaw —— 用户可能某次误点过 Hermes 主线导致 engineMode 被持久化,
+ * 不该让之后每次启动都卡在 Hermes setup。不回写 clawpanel.json:用户若之后
+ * 真把 Hermes 装好,下次启动仍尊重其选择(自愈,双向)。
  */
 export async function initEngineManager() {
   let mode = 'openclaw'
@@ -63,7 +68,31 @@ export async function initEngineManager() {
       mode = cfg.engineMode
     }
   } catch {}
+
+  if (mode === 'hermes') {
+    try {
+      const info = await api.checkHermes()
+      const hermesReady = !!info?.installed && !!info?.configExists
+      if (!hermesReady) mode = 'openclaw'
+    } catch {
+      mode = 'openclaw' // checkHermes 失败也回退,避免卡在不可用引擎
+    }
+  }
+
   await activateEngine(mode, false)
+
+  // 修正"初始化由 main.js 处理"的空头支票:activateEngine(persist=false) 不调
+  // engine.boot(),而 main.js 只显式 detectOpenclawStatus()、从不 boot 活跃的
+  // Hermes 引擎 → Hermes 模式下 _ready 永远 false、15s 轮询从不启动、boot 逻辑
+  // 误判未就绪重定向到 /h/setup。这里补上 hermes 引擎的 boot(openclaw 已由
+  // main.js 的 detectOpenclawStatus 覆盖,不重复 detect)。
+  if (mode === 'hermes' && _engines.hermes?.boot) {
+    try {
+      await withTimeout(_engines.hermes.boot(), 10000, 'hermes boot timeout')
+    } catch (e) {
+      console.warn('[engine-manager] hermes boot 失败或超时:', e)
+    }
+  }
 }
 
 /**

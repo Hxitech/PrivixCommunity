@@ -515,7 +515,8 @@ async function boot() {
   topbar.querySelector('.mobile-hamburger').addEventListener('click', openMobileSidebar)
   mainCol.prepend(topbar)
 
-  // Tauri 模式：确保 web session 存在（页面刷新后 cookie 可能丢失），然后加载实例和检测状态
+  // Tauri 模式：确保 web session 存在（页面刷新后 cookie 可能丢失）
+  // 这一步不阻塞 instance / openclaw 探测,因后两者走 IPC 不依赖 cookie
   const ensureWebSession = isTauri
     ? api.readPanelConfig().then(cfg => {
         if (cfg.accessPassword) {
@@ -528,7 +529,12 @@ async function boot() {
       }).catch(() => {})
     : Promise.resolve()
 
-  ensureWebSession.then(() => Promise.all([loadActiveInstance(), detectOpenclawStatus()])).then(() => {
+  // 并行启动:web session / instance / openclaw 三路并发,而不是 then 串接
+  Promise.all([
+    ensureWebSession,
+    loadActiveInstance(),
+    detectOpenclawStatus(),
+  ]).then(() => {
     // 版本门控预加载（fire-and-forget，未获取到版本时默认显示所有功能）
     initFeatureGates().catch(() => {})
     setRouteGuard(async (routeState) => {
@@ -668,6 +674,21 @@ async function boot() {
         })
         await listen('upgrade-error', refreshAfterTask)
       }).catch(() => {})
+    }
+  }).catch(err => {
+    // boot 主链路任何环节抛错(如 detectOpenclawStatus / loadActiveInstance) 都兜底
+    // 防止 splash 永久挂死,把错误暴露给用户而不是静默卡死
+    console.error('[boot] startup failed:', err)
+    _hideSplashWhenReady({ immediate: true, revealApp: true })
+    if (content) {
+      content.innerHTML = `
+        <div style="padding:48px 32px;max-width:640px;margin:80px auto">
+          <h2 style="margin:0 0 12px 0;font-size:18px">${escHtml(t('main.boot_failed_title') || '启动失败')}</h2>
+          <div style="margin-bottom:16px;color:var(--text-tertiary);font-size:13px">${escHtml(t('main.boot_failed_hint') || '初始化时遇到错误,请尝试重启应用。如反复出现,请提供下方日志反馈。')}</div>
+          <pre style="background:var(--surface-light,#f5f5f7);border:1px solid var(--border-primary,#E2E5EB);border-radius:8px;padding:12px;font-size:12px;overflow:auto;max-height:240px">${escHtml(err?.stack || err?.message || String(err))}</pre>
+          <button onclick="location.reload()" class="btn btn-pill-filled" style="margin-top:16px">${escHtml(t('main.boot_failed_retry') || '重试')}</button>
+        </div>
+      `
     }
   })
 }
