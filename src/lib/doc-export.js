@@ -173,7 +173,10 @@ export async function markdownToDocx(markdown, options = {}) {
 
       case 'paragraph':
         children.push(new Paragraph({
-          children: parseInlineFormatting(block.text, baseFont),
+          // 注意:parseInlineFormatting 第一参必须是 TextRun 构造器(其它 case 都传了,
+          // 此处历史遗漏 → 段落走到时 TextRun=block.text 字符串 → new <string>() 抛 TypeError,
+          // 导致任何含段落的报告 docx 导出直接失败)
+          children: parseInlineFormatting(TextRun, block.text, baseFont),
           spacing: { after: 120 },
         }))
         break

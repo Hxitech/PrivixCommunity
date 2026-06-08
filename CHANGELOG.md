@@ -37,9 +37,15 @@
 - 跳过:OpenClaw 推荐版本号强升 5.12→6.1(CE baseline 2026.4.12 自决)/ `e748b72` Windows CLI .exe/.js 检测 132 行(留下批,与 `d2cf86e` CLI 缓存一起)/ `d2cf86e` CLI 60s TTL 缓存(耦合 Windows 检测)+ models.js per-model fix(依赖 CE 未 port 的 models.js 完整主模型自愈)/ Hermes pages 改动(自主演化)/ `ac08330` env.js + 商业页面(CE 无)
 - 跳过批次:`29aba1b`(v1.10.16 Power User 新功能)/ `8b57448`(外部客户端导入新功能)/ `f3f0426`/`293a8e6`/`6a2feeb`/`7fb89e7`(Hermes 引擎独占)
 
+#### EvoScientist / ProspectResearch(`fd6948b` + `3017fdc` 摘取)
+
+- **DOCX 段落导出崩溃修复**(同步自 invest `fd6948b`):`doc-export.js` markdownToDocx 的 `paragraph` 分支漏传 `parseInlineFormatting` 首参 TextRun 构造器 → 含段落的报告 `new <string>()` 抛 TypeError,任何含正文段落的报告 DOCX 导出直接失败。`doc-export.js` 是 ProspectResearch / 多功能共享导出器,**这是真实高价值 bug 修复**
+- **研究事件监听器生命周期修复**(同 `fd6948b`):`evoscientist.js` cleanup() 解绑 `evoscientist-event` 监听器 → 用户切走 `/research` 后研究桥接仍在跑但事件无人接收 → 进度卡死 / sending 永真。改为 app 生命周期常驻(ensureListeners 已幂等,renderXxxSection 有 null 守卫,卸载期间安全 no-op)
+- **BASE_CONFIG 8 新字段**(同 `3017fdc`,forward-compat):`evoscientist-readiness.js` 补 EvoScientist 0.1.4 的 default_mode / auto_mode / show_thinking / enable_async_subagents / memory_observations_enabled / reasoning_effort / auxiliary_provider / auxiliary_model
+- **N/A 跳过**:EvoScientist 0.1.4 内核 pin(`evoscientist.rs`)/ bridge.py snapshot round-trip — **CE 开源版未包含 EvoScientist 的 Rust + Python 后端**(初次 fork 时剥离),`/research` 前端在但后端不发布,故内核版本 pin 与桥接改动对 CE N/A。plan mode + workspace 一等公民 UI(147 行 + 83 CSS)在无后端时不功能,暂跳
+
 #### 下批候选
 
-- **EvoScientist 0.1.4**(`3017fdc`):plan mode + workspace 一等公民 + doc-export bug fix(无 PE/VC 依赖,~420 行)— 本批次单独 commit 处理
 - `e748b72` + `d2cf86e` Windows CLI .exe/.js 检测 + 60s TTL 缓存(完整 port,~200 行 Rust)
 - `8b57448` 部分:Channels/Plugin Hub 并发 + 超时(Promise.allSettled + withTimeout)
 
