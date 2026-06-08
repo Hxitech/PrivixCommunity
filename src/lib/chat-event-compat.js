@@ -168,8 +168,10 @@ export function normalizeGatewayChatEvent(payload, previousText = '') {
   const isReplace = payload?.replace === true
   let text = previousText
   if (state === 'delta') {
-    if (isReplace && snapshotText) {
-      text = snapshotText
+    if (isReplace) {
+      // replace=true 是完整覆盖意图,无条件采用 snapshot(含空字符串 = 全清场景);
+      // snapshot 缺失时回退到 incrementalText,仍优先于旧 previousText
+      text = snapshotText || incrementalText || ''
     } else if (incrementalText) {
       text = previousText + incrementalText
     } else if (!previousText) {

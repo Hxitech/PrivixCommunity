@@ -6,9 +6,42 @@
 
 ## [Unreleased]
 
-聚合 sync/invest-2026-05、sync/invest-2026-06、sync/invest-2026-07 三批次同步,发版时合并到下一个 -ce 版本号。
+聚合 sync/invest-2026-05 ~ sync/invest-2026-08 四批次同步,发版时合并到下一个 -ce 版本号。
 
 ---
+
+### sync/invest-2026-08 — Hermes 0.16 + OpenClaw 内核兼容 + 灯箱内存泄漏
+
+从 invest v1.10.14 → v1.10.29(33 commit)摘取版本升级链 + 内核兼容 fix + 内存泄漏修复。聚焦"已有功能 fix + 兼容 + 安全",跳过新功能(Power User 套餐、外部客户端导入、Hermes 新页面、视觉)。
+
+#### ⚠ 内核兼容(P0,必做)
+
+- **hello payload 版本字段兼容**(同步自 invest `e748b72` / 上游 a50000a):OpenClaw 2026.5.18/5.19+ 把版本从扁平 `hello.serverVersion` 迁到嵌套 `hello.server.version`(协议仍 v4)。`ws-client.js` 改为双读 `payload?.serverVersion || payload?.server?.version`,否则连最新内核握手成功后 serverVersion 为空 → Dashboard 版本显示 / negotiatedProtocol 推断全断
+- **Windows npm prefix 潜伏 bug 修复**(同 `e748b72`):`windows_npm_global_prefix()` 被 `skills.rs` 引用但全树从未定义(只在 `#[cfg(windows)]` 编译,macOS check 跳过未暴露)→ 在 `mod.rs` 补齐定义(`npm config get prefix` + `%APPDATA%\npm` 回退)。修复潜伏的 Windows 编译失败
+- **feature gates 留位**:`FEATURE_HELLO_NESTED_SERVER`(2026.5.18)/ `FEATURE_SKILL_WORKSHOP` / `FEATURE_WORKBOARD`(2026.6.1)
+
+#### 变更
+
+- **Hermes Agent 升级到 0.16.0**(URL pin → `v2026.6.5`,The Surface Release)。0.13→0.16 升级链:0.14 新增 LINE/SimpleX 平台 + 补齐消息发送依赖(httpx/openai/aiohttp/websockets);0.15.1 新增 ntfy 平台、Discord/Mattermost 迁为 plugin;0.16 无 env var 重命名 / 无平台增删,requires-python 收紧为 `>=3.11,<3.14`。**无破坏性 env var 变更**(2026-06-07 兼容审计 LOW RISK)
+  - 新增 `HERMES_TOOL_WITH_DEPS` 数组 + `add_hermes_tool_with_deps()` helper:`--with` 注入 croniter/httpx/openai/aiohttp/websockets,避免宿主缺包导致 Hermes 消息发送失败。统一应用到 install + reinstall 两条路径
+
+#### 修复
+
+- **聊天灯箱内存泄漏**(同步自 invest `e0edd60` 摘取):`showLightbox` 点击关闭路径只 `lb.remove()` 不解绑 document keydown listener → 每次开灯箱泄漏一个 listener。改为统一 `close()` 解绑 + 注册到模块级 `_transientOverlayClosers` Set,`cleanup()` 路由切走时兜底关闭所有残留 overlay
+- **chat-event-compat replace 空值守卫**(同 `e0edd60`):delta 协议 `replace=true` 改为无条件采用 snapshot(含空字符串 = 全清场景),snapshot 缺失时回退 incrementalText。补 3 个单测(replace 短 snapshot 覆盖 / 空 snapshot 清空 / 非 replace 前缀扩展)
+- **welcome-modal i18n 时序**(同步自 invest `ac08330` 摘取):`AI_SPOTLIGHT_STEPS` 模块级 const 在 import 时就冻结 `t()` 结果,若 i18n 未加载完则文案错误/缺失。改为 `getAiSpotlightSteps()` 函数延迟求值
+
+#### 同步追踪
+
+- 已 port:`e748b72`(hello 兼容 + windows latent bug,摘取)、Hermes 0.13→0.16 版本链(`fd6948b`/`b6a297b`/`6cbbbaa`)、`e0edd60`(灯箱泄漏 + replace 守卫,摘取)、`ac08330`(welcome-modal i18n,摘取)
+- 跳过:OpenClaw 推荐版本号强升 5.12→6.1(CE baseline 2026.4.12 自决)/ `e748b72` Windows CLI .exe/.js 检测 132 行(留下批,与 `d2cf86e` CLI 缓存一起)/ `d2cf86e` CLI 60s TTL 缓存(耦合 Windows 检测)+ models.js per-model fix(依赖 CE 未 port 的 models.js 完整主模型自愈)/ Hermes pages 改动(自主演化)/ `ac08330` env.js + 商业页面(CE 无)
+- 跳过批次:`29aba1b`(v1.10.16 Power User 新功能)/ `8b57448`(外部客户端导入新功能)/ `f3f0426`/`293a8e6`/`6a2feeb`/`7fb89e7`(Hermes 引擎独占)
+
+#### 下批候选
+
+- **EvoScientist 0.1.4**(`3017fdc`):plan mode + workspace 一等公民 + doc-export bug fix(无 PE/VC 依赖,~420 行)— 本批次单独 commit 处理
+- `e748b72` + `d2cf86e` Windows CLI .exe/.js 检测 + 60s TTL 缓存(完整 port,~200 行 Rust)
+- `8b57448` 部分:Channels/Plugin Hub 并发 + 超时(Promise.allSettled + withTimeout)
 
 ### sync/invest-2026-07 (续) — Module B/C: Workspace 权限自检 + 沙箱可视化
 

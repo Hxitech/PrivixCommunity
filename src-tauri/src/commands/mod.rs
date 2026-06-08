@@ -522,6 +522,41 @@ pub fn refresh_enhanced_path() {
     }
 }
 
+/// Windows: 返回 npm 全局 prefix 目录(全局包的安装根)。
+///
+/// 历史遗留:`skills.rs` 引用此函数但树里一直缺定义
+/// (因为只在 `#[cfg(target_os = "windows")]` 下编译,macOS `cargo check` 跳过,
+/// 潜伏的 Windows 编译失败一直没暴露)。本函数补齐定义,统一探测逻辑:
+///   1. `npm config get prefix`(权威,跟用户实际 npm 配置一致)
+///   2. 回退 `%APPDATA%\npm`(npm 在 Windows 的默认全局 prefix)
+#[cfg(target_os = "windows")]
+pub fn windows_npm_global_prefix() -> Option<String> {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+    let mut cmd = std::process::Command::new("cmd");
+    cmd.args(["/c", "npm", "config", "get", "prefix"])
+        .env("PATH", enhanced_path())
+        .creation_flags(CREATE_NO_WINDOW);
+    if let Ok(output) = cmd.output() {
+        if output.status.success() {
+            let prefix = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !prefix.is_empty() && prefix != "undefined" && std::path::Path::new(&prefix).exists()
+            {
+                return Some(prefix);
+            }
+        }
+    }
+    // 回退:npm 在 Windows 的默认全局 prefix 是 %APPDATA%\npm
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        let fallback = std::path::PathBuf::from(appdata).join("npm");
+        if fallback.exists() {
+            return Some(fallback.to_string_lossy().to_string());
+        }
+    }
+    None
+}
+
 fn node_version_sort_key(name: &std::ffi::OsStr) -> (u32, u32, u32, String) {
     let text = name.to_string_lossy().to_string();
     let mut parts = text

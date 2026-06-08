@@ -195,20 +195,24 @@ function getScenes() {
 }
 
 // AI 配置 Spotlight 步骤
-const AI_SPOTLIGHT_STEPS = [
-  {
-    selector: '.page-title',
-    title: t('comp_welcome.spotlight_ai_env_title'),
-    description: t('comp_welcome.spotlight_ai_env_desc'),
-    position: 'bottom',
-  },
-  {
-    selector: '#sidebar',
-    title: t('comp_welcome.spotlight_ai_path_title'),
-    description: t('comp_welcome.spotlight_ai_path_desc'),
-    position: 'right',
-  },
-]
+// 用函数延迟求值(对标 upstream ac08330):模块级 const 会在 import 时就冻结 t() 的结果,
+// 若此模块在 i18n 加载完成前被 import,spotlight 文案会拿到错误/缺失的翻译。改为调用时再求值。
+function getAiSpotlightSteps() {
+  return [
+    {
+      selector: '.page-title',
+      title: t('comp_welcome.spotlight_ai_env_title'),
+      description: t('comp_welcome.spotlight_ai_env_desc'),
+      position: 'bottom',
+    },
+    {
+      selector: '#sidebar',
+      title: t('comp_welcome.spotlight_ai_path_title'),
+      description: t('comp_welcome.spotlight_ai_path_desc'),
+      position: 'right',
+    },
+  ]
+}
 
 function dismiss(overlay) {
   overlay.classList.add('hiding')
@@ -220,7 +224,7 @@ function launchSceneGuide(sceneId) {
   if (sceneId === 'ai') {
     if (navigate) navigate('/setup')
     setTimeout(() => {
-      startSpotlight(AI_SPOTLIGHT_STEPS, {
+      startSpotlight(getAiSpotlightSteps(), {
         guideId: 'openclaw_onboarding',
         onComplete: () => {},
         onSkip: () => {},

@@ -15,6 +15,14 @@ export const FEATURE_NODE_PREFLIGHT = '2026.3.24'
 export const FEATURE_PROTOCOL_V4_HANDSHAKE = '2026.5.12'
 // OpenClaw 2026.5.12 — chat delta 协议支持 replace 语义,允许文本回滚/重排
 export const FEATURE_CHAT_DELTA_REPLACE = '2026.5.12'
+// OpenClaw 2026.5.18 — hello payload 版本字段迁移到嵌套 hello.server.version
+// (协议仍是 v4,无 v5 握手);ws-client 已双读兼容。留位供未来按版本门控。
+export const FEATURE_HELLO_NESTED_SERVER = '2026.5.18'
+// OpenClaw 2026.6.1 — Skill Workshop:受治理的技能创建流(proposal/revision/preview +
+// skill_workshop agent 工具 + Gateway/CLI review)。内核侧 Control UI 功能,留位供未来面板门控。
+export const FEATURE_SKILL_WORKSHOP = '2026.6.1'
+// OpenClaw 2026.6.1 — Workboard:多 Agent 编排/规划(task-backed board runs + 任务评论)。留位。
+export const FEATURE_WORKBOARD = '2026.6.1'
 
 // 缓存当前检测到的 OpenClaw 版本
 let _cachedVersion = null

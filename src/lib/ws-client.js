@@ -579,7 +579,11 @@ export class WsClient {
     this._authRetryCount = 0
     this._hello = payload || null
     this._snapshot = payload?.snapshot || null
-    this._serverVersion = payload?.serverVersion || null
+    // 兼容两种 hello payload 形状(对标 upstream a50000a):
+    //   - 旧:扁平 hello.serverVersion
+    //   - 新(OpenClaw 2026.5.18/5.19+):嵌套 hello.server.version
+    // 否则最新内核握手成功后 serverVersion 为空 → Dashboard 版本显示 / negotiatedProtocol 推断全断
+    this._serverVersion = payload?.serverVersion || payload?.server?.version || null
     const defaults = this._snapshot?.sessionDefaults
     if (defaults?.mainSessionKey) {
       this._sessionKey = defaults.mainSessionKey
