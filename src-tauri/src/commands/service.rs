@@ -847,7 +847,7 @@ mod platform {
             .open(log_dir.join("gateway.err.log"))
             .map_err(|e| format!("创建错误日志文件失败: {e}"))?;
 
-        let mut cmd = Command::new("openclaw");
+        let mut cmd = crate::utils::openclaw_command();
         cmd.arg("gateway")
             .env("PATH", &enhanced)
             .stdin(std::process::Stdio::null())
@@ -1328,7 +1328,7 @@ mod platform {
     }
 
     pub async fn is_cli_installed() -> bool {
-        Command::new("openclaw")
+        crate::utils::openclaw_command_async()
             .arg("--version")
             .env("PATH", crate::commands::enhanced_path())
             .output()
@@ -1376,7 +1376,7 @@ mod platform {
         if connected {
             (true, None)
         } else {
-            if let Ok(output) = Command::new("openclaw")
+            if let Ok(output) = crate::utils::openclaw_command_async()
                 .arg("health")
                 .env("PATH", crate::commands::enhanced_path())
                 .output()

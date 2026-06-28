@@ -10,6 +10,28 @@
 
 ---
 
+### sync/invest-2026-08 (续) — 引擎深链路由 + 桌面启动加固 + CLI 路径
+
+补齐 v1.10.14→v1.10.29 范围内遗漏的崩溃 / 卡死 / 路由类 fix(全盘点交叉比对后)。
+
+#### 修复
+
+- **OpenClaw CLI 路径绕过缓存**(同步自 invest `36e7c3e`,🔴 崩溃):`service.rs` 3 处直接 `Command::new("openclaw")` 而非 `crate::utils::openclaw_command[_async]()` → 走系统 PATH 解析而非已绑定/已缓存的 CLI 路径,**升级 OpenClaw 后版本切换失效**(仍调旧 CLI)。gateway 启动 / `is_cli_installed` / health 探测三处统一改用缓存路径
+- **引擎深链路由加载**(同步自 invest `6a2feeb`,🟠 路由卡死):在 OpenClaw 引擎下直达 `/h/*` Hermes 深链时,路由守卫不切引擎 → 卡在错误引擎下页面空白。`engine-route-policy.js` 新增 `isHermesEngineRoute()` + `canRouteRunInEngine`/`getRouteRequiredEngine` 补 OpenClaw→Hermes 切换语义;`main.js` 路由守卫开头 `getRouteRequiredEngine` + `switchEngine` 先切引擎再放行;`product-profile.js` Hermes allowed-routes 补 `/h/logs` `/h/memory`(已注册但漏在白名单)
+- **桌面端启动卡死防护**(同步自 invest `293a8e6`,🔴 卡死):`checkAuth` / 登录浮层的 `api.readPanelConfig()` 加 2.5s `withTimeout`(复用 router.js 既有)→ IPC 卡死时不让 splash / 登录按钮永久挂起;登录建立 web session 的 `await fetch('/__api/auth_login')` 改为非阻塞 `syncWebSessionBestEffort()`(1.2s AbortController 超时)—— Tauri release 中 `/__api/*` 不一定存在,阻塞 await 会让登录浮层关不掉
+
+#### N/A / 跳过
+
+- `e0edd60` memory.js 搜索防抖泄漏:CE 的 `src/pages/memory.js` 无 v1.10.16 全文搜索功能(Power User 新功能未同步),防抖泄漏不存在
+- `293a8e6` 的 `renderFatalStartupError` / `onDomReady` / `bindShellElements`:CE 在 sync-06 已有 boot `.catch` 内联错误 UI 兜底,不重复
+- `293a8e6` 的 hermes.rs minimax chat 部分:Hermes provider 系统改动,CE 无前置
+
+#### 验证
+
+cargo check ✓ 0 新 warning / npm test 122/122(engine-route-policy 测试同步更新 OpenClaw→Hermes 新语义)/ i18n:check:strict 11/11
+
+---
+
 ### sync/invest-2026-08 — Hermes 0.16 + OpenClaw 内核兼容 + 灯箱内存泄漏
 
 从 invest v1.10.14 → v1.10.29(33 commit)摘取版本升级链 + 内核兼容 fix + 内存泄漏修复。聚焦"已有功能 fix + 兼容 + 安全",跳过新功能(Power User 套餐、外部客户端导入、Hermes 新页面、视觉)。
