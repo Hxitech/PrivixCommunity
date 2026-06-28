@@ -520,6 +520,8 @@ pub fn refresh_enhanced_path() {
     if let Ok(mut guard) = ENHANCED_PATH_CACHE.write() {
         *guard = Some(new_path);
     }
+    // node/CLI 路径可能变了 → 让 Windows CLI 解析缓存失效,下次 find_openclaw_cmd 重新探测
+    crate::utils::invalidate_openclaw_cli_cache();
 }
 
 /// Windows: 返回 npm 全局 prefix 目录(全局包的安装根)。

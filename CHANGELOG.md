@@ -26,6 +26,14 @@
 - `293a8e6` 的 `renderFatalStartupError` / `onDomReady` / `bindShellElements`:CE 在 sync-06 已有 boot `.catch` 内联错误 UI 兜底,不重复
 - `293a8e6` 的 hermes.rs minimax chat 部分:Hermes provider 系统改动,CE 无前置
 
+#### Windows CLI 检测(同步自 invest `e748b72` + `d2cf86e`,🔴 Windows 版本切换失效)
+
+- **新安装器 .exe / .js 入口检测**:OpenClaw 新安装器在 Windows 出 `openclaw.exe` / node_modules 出 `bin/openclaw.js`(需 `node` 调用),CE 旧 `find_openclaw_cmd` 只查 `openclaw.cmd` → **装了新版但面板找不到 CLI / 版本切换失效**。`utils.rs` 新增 `windows_openclaw_entry_relpaths()`(5 种入口)+ `common_windows_cli_candidates()`(枚举 enhanced PATH + `%APPDATA%\npm` + npm prefix + standalone + `%LOCALAPPDATA%`)+ `apply_windows_openclaw_invocation()`(.js 走 `node`,其它 `cmd /c`)
+- **CLI 路径解析 60s TTL 缓存**:`find_openclaw_cmd` 在 15s 网关轮询 + 每次 `openclaw_command*` 调用链上跑,每次 spawn `npm config get prefix` + 数十次 stat → Windows 稳态性能回归。加 `RESOLVED_CLI_CACHE`(60s TTL,对齐 `ENHANCED_PATH_CACHE`)+ `invalidate_openclaw_cli_cache()`(`refresh_enhanced_path` 时主动失效)
+- **agent_detect 移除多余 CommandExt import**:tokio Command 自带 inherent `creation_flags`,导入 trait 触发 unused import 警告(Windows clippy -D warnings 会失败)
+- 双目标验证:macOS `cargo check` + `cargo check --target x86_64-pc-windows-gnu` 均 0 error(实编译 cfg(windows) 全部新代码)
+- **跳过**:`d2cf86e` 的 `scan_all_installations` 多安装扫描增强(多安装管理 UI 是新功能)/ models.js per-model(CE 无 normalizeDefaultModelMap)
+
 #### 性能 / 内存(同步自 invest `8b57448` fix 部分,跳过外部客户端导入 / Plugin Hub 分类等新功能)
 
 - **chat 消息队列上限 50**(🟠 内存):`_messageQueue.push` 无上限 → streaming 卡死时用户连发会让队列(含 attachments base64)无限增长占内存。加 50 条上限 + `queue_full` toast(11 locale)
