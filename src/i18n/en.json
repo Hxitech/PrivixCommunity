@@ -891,7 +891,8 @@
       "toast_session_renamed": "会话已重命名",
       "error_config_timeout": "Read timeout (8s), please check configuration file",
       "error_invalid_data_url": "Invalid data URL",
-      "hint_compaction": "🗜️ Compacting context…"
+      "hint_compaction": "🗜️ Compacting context…",
+      "queue_full": "Message queue is full (50 pending). Please wait for current output to complete before sending more."
     },
     "models": {
       "title": "Model Config",

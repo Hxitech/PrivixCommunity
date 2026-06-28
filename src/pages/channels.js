@@ -9,6 +9,7 @@ import { icon } from '../lib/icons.js'
 import { isFeatureAvailable } from '../lib/openclaw-feature-gates.js'
 import { t } from '../lib/i18n.js'
 import { escapeHtml as esc } from '../lib/escape.js'
+import { withTimeout } from '../router.js'
 
 // ── 渠道注册表：定义每个支持的消息渠道的元数据和表单规格 ──
 
@@ -227,17 +228,23 @@ async function triggerWorkspacePermissionCheck() {
 // ── 数据加载 ──
 
 async function loadPlatforms(page, state) {
-  try {
-    const list = await api.listConfiguredPlatforms()
-    state.configured = Array.isArray(list) ? list : []
-  } catch (e) {
-    toast(t('pages.channels.toast_load_failed', { error: e }), 'error')
+  // perf:两个 API 并发拉,各带 8s 超时,任一慢/失败不再拖全局;
+  // Promise.allSettled 让两个独立 fall-back 到空数组而不是连环 try/catch
+  const [listRes, bindingsRes] = await Promise.allSettled([
+    withTimeout(api.listConfiguredPlatforms(), 8000),
+    withTimeout(api.listAllBindings(), 8000),
+  ])
+  if (listRes.status === 'fulfilled') {
+    state.configured = Array.isArray(listRes.value) ? listRes.value : []
+  } else {
+    console.warn('[channels] listConfiguredPlatforms 慢/失败:', listRes.reason)
+    toast(t('pages.channels.toast_load_failed', { error: listRes.reason?.message || listRes.reason }), 'error')
     state.configured = []
   }
-  try {
-    const result = await api.listAllBindings()
-    state.bindings = Array.isArray(result?.bindings) ? result.bindings : []
-  } catch { state.bindings = [] }
+  state.bindings = bindingsRes.status === 'fulfilled' && Array.isArray(bindingsRes.value?.bindings)
+    ? bindingsRes.value.bindings
+    : []
+  if (bindingsRes.status === 'rejected') console.warn('[channels] listAllBindings 慢/失败:', bindingsRes.reason)
   renderConfigured(page, state)
   renderAvailable(page, state)
   renderBindings(page, state)

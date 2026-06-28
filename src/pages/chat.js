@@ -1146,7 +1146,15 @@ async function sendMessage() {
   _attachments = []
   renderAttachments()
   syncFastModePreferenceFromCommand(text)
-  if (_isSending || _isStreaming || _isBootstrappingCommand) { _messageQueue.push({ text, attachments }); return }
+  if (_isSending || _isStreaming || _isBootstrappingCommand) {
+    // 队列上限 50 条,避免 streaming 卡死时用户疯狂连发导致队列无限增长占内存(含 attachments base64)
+    if (_messageQueue.length >= 50) {
+      toast(t('pages.chat.queue_full'), 'warn')
+      return
+    }
+    _messageQueue.push({ text, attachments })
+    return
+  }
   doSend(text, attachments)
 }
 
@@ -2099,6 +2107,10 @@ function appendImagesToEl(el, images) {
       return
     }
     imgEl.className = 'msg-img'
+    // perf:lazy load + async decoding,大长对话(多图)滚动列表更流畅,
+    // 浏览器只在图片即将进入视口时解码 bitmap,大幅减少长会话首次渲染卡顿
+    imgEl.loading = 'lazy'
+    imgEl.decoding = 'async'
     imgEl.onclick = () => showLightbox(imgEl.src)
     container.appendChild(imgEl)
   })

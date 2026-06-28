@@ -26,6 +26,12 @@
 - `293a8e6` 的 `renderFatalStartupError` / `onDomReady` / `bindShellElements`:CE 在 sync-06 已有 boot `.catch` 内联错误 UI 兜底,不重复
 - `293a8e6` 的 hermes.rs minimax chat 部分:Hermes provider 系统改动,CE 无前置
 
+#### 性能 / 内存(同步自 invest `8b57448` fix 部分,跳过外部客户端导入 / Plugin Hub 分类等新功能)
+
+- **chat 消息队列上限 50**(🟠 内存):`_messageQueue.push` 无上限 → streaming 卡死时用户连发会让队列(含 attachments base64)无限增长占内存。加 50 条上限 + `queue_full` toast(11 locale)
+- **chat 图片 lazy load + async decoding**(perf):消息列表图片加 `loading='lazy'` + `decoding='async'`,长会话(多图)滚动更流畅,减少首次渲染卡顿
+- **channels 数据加载并发 + 超时**(🟠 卡死):`listConfiguredPlatforms` + `listAllBindings` 从顺序 await 改 `Promise.allSettled` 并发 + 各 8s `withTimeout`,任一慢/失败不再拖全局
+
 #### 验证
 
 cargo check ✓ 0 新 warning / npm test 122/122(engine-route-policy 测试同步更新 OpenClaw→Hermes 新语义)/ i18n:check:strict 11/11

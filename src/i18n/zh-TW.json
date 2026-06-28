@@ -1182,7 +1182,8 @@
       "toast_session_renamed": "會話已重新命名",
       "error_config_timeout": "讀取超時(8s)，請檢查配置文件",
       "error_invalid_data_url": "無效的數據 URL",
-      "hint_compaction": "🗜️ 正在整理上下文（Compaction）…"
+      "hint_compaction": "🗜️ 正在整理上下文（Compaction）…",
+      "queue_full": "等待中的消息已滿(50 條),請等當前輸出完成後再發送"
     },
     "models": {
       "title": "模型配置",
