@@ -94,6 +94,15 @@ CE 独有的差异化功能,明确社区版与商业版的切分:
 
 ### 下一批次候选(评估顺序按价值)
 
+> v1.10.14→v1.10.29 范围内所有**可安全 port 的 fix 已全部同步**(见上方 sync-08 + loop 续两行)。
+> 剩余仅一项关键路径 fix 需专门一轮 + Windows 实测,不宜混在批量同步里:
+
+0. **`6cbbbaa` Windows 配对稳定性**(⚠️ 关键路径,独立一轮处理):pairing.rs 就地升级旧 paired.json 条目
+   (`normalize_control_ui_pairing` / `ensure_operator_token`,修 stale 条目被 Gateway 无限拒绝,347 行)
+   + ws-client.js/main.js 配对后不再 auto-reloadGateway(Windows 上误杀手动启动的 Gateway)+ chat.js
+   autoPairDevice 竞态守卫。**为何 defer**:改设备配对/连接关键路径,upgrade-in-place 语义依赖 Gateway 行为,
+   reload 移除与 pairing.rs 升级强耦合,半 port 有破坏连接流回归风险,需 Windows 实测验证。
+
 1. **`cdda719` Module E**(health-overview-modal.js 209 行新组件 — 跳过,新功能)
 2. **`77b7ca3` 剩余**:`models.js` 主模型自愈完整版(154 行 diff,补 dashboard 简版未覆盖的 toast + 4 个 helper)/`settings.js` Windows 终端选项 / `assistant.js` 引擎切换身份(110 LOC,Hermes Only)/ `about.js`+`services.js` "升级到最新版" 按钮
 3. **`18cf7cd`** Bug 3:chat 多模态(涉及 hermes_agent_run Rust 改 + file-utils 新建 + chat.js 改)
