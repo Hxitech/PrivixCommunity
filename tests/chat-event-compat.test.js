@@ -112,3 +112,37 @@ test('extractGatewayChatContent unwraps nested message payloads from history eve
   assert.equal(content.text, 'Sub-agent final answer')
   assert.equal(content.images.length, 1)
 })
+
+test('normalizeGatewayChatEvent honors replace=true with shorter snapshot (v4 delta rollback)', () => {
+  // OpenClaw 2026.5.12+ v4 协议在内容回滚/重排时带 replace=true,
+  // 新 snapshot 可能比当前缓存短,必须无条件覆盖
+  const result = normalizeGatewayChatEvent({
+    state: 'delta',
+    replace: true,
+    message: { content: 'Short' },
+  }, 'Much longer previous text')
+
+  assert.equal(result.text, 'Short')
+})
+
+test('normalizeGatewayChatEvent replace=true with empty snapshot clears text (v1.10.17 fix)', () => {
+  // 全清场景:replace=true 且 snapshot 为空 → 文本清空,不回退到旧 previousText
+  const result = normalizeGatewayChatEvent({
+    state: 'delta',
+    replace: true,
+    message: { content: '' },
+  }, 'Previous content that should be cleared')
+
+  assert.equal(result.text, '')
+})
+
+test('normalizeGatewayChatEvent without replace keeps prefix-extension semantics', () => {
+  // 非 replace 时维持原前缀扩展逻辑:短 snapshot 不覆盖
+  const result = normalizeGatewayChatEvent({
+    state: 'delta',
+    message: { content: 'Hi' },
+  }, 'Hi there')
+
+  // snapshot 'Hi' 不是 'Hi there' 的前缀扩展 → 走拼接兜底
+  assert.equal(result.text, 'Hi thereHi')
+})

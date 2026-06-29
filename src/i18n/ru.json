@@ -1182,7 +1182,8 @@
       "toast_session_renamed": "会话已重命名",
       "error_config_timeout": "读取超时(8s)，请检查配置文件",
       "error_invalid_data_url": "无效的数据 URL",
-      "hint_compaction": "🗜️ 正在整理上下文（Compaction）…"
+      "hint_compaction": "🗜️ 正在整理上下文（Compaction）…",
+      "queue_full": "等待中的消息已满(50 条),请等当前输出完成后再发送"
     },
     "models": {
       "title": "Model Config",

@@ -5,7 +5,7 @@
 import { installWorkspaceStorage } from './lib/workspace-storage.js'
 installWorkspaceStorage()
 
-import { getHashPath, registerRoute, initRouter, navigate, setDefaultRoute, setRouteGuard, reloadCurrentRoute } from './router.js'
+import { getHashPath, registerRoute, initRouter, navigate, setDefaultRoute, setRouteGuard, reloadCurrentRoute, withTimeout } from './router.js'
 import { renderSidebar, openMobileSidebar } from './components/sidebar.js'
 import { initTheme, initScale, initUserCss } from './lib/theme.js'
 import { detectOpenclawStatus, isOpenclawReady, isUpgrading, isGatewayRunning, isGatewayForeign, onGatewayChange, startGatewayPoll, onGuardianGiveUp, resetAutoRestart, loadActiveInstance, getActiveInstance, onInstanceChange } from './lib/app-state.js'
@@ -20,8 +20,8 @@ import { initWelcome } from './components/welcome-modal.js'
 import { mountHelpFab } from './components/help-fab.js'
 import { initI18n, onLocaleChange, t } from './lib/i18n.js'
 import { initFeatureGates } from './lib/feature-gates.js'
-import { registerEngine, initEngineManager, getActiveEngine, getActiveEngineId, onEngineChange } from './lib/engine-manager.js'
-import { canRouteRunInEngine, ENGINE_ROUTE_IDS } from './lib/engine-route-policy.js'
+import { registerEngine, initEngineManager, getActiveEngine, getActiveEngineId, onEngineChange, switchEngine } from './lib/engine-manager.js'
+import { canRouteRunInEngine, getRouteRequiredEngine, ENGINE_ROUTE_IDS } from './lib/engine-route-policy.js'
 import openclawEngine from './engines/openclaw/index.js'
 import hermesEngine from './engines/hermes/index.js'
 
@@ -57,7 +57,8 @@ async function checkAuth() {
     // 桌面端：读 clawpanel.json，检查密码配置
     try {
       const { api } = await import('./lib/tauri-api.js')
-      const cfg = await api.readPanelConfig()
+      // 加 2.5s 超时:IPC 卡死时不让登录检查永久挂住 splash(对标 invest 293a8e6 桌面登录加固)
+      const cfg = await withTimeout(api.readPanelConfig(), 2500, '读取本地面板配置超时')
       if (!cfg.accessPassword) return { ok: true }
       if (sessionStorage.getItem('privix_community_authed') === '1' || sessionStorage.getItem('clawpanel_authed') === '1') return { ok: true }
       // 默认密码：直接传给登录页，避免二次读取
@@ -77,6 +78,22 @@ async function checkAuth() {
     if (!data.required || data.authenticated) return { ok: true }
     return { ok: false, defaultPw: data.defaultPassword || null }
   } catch { return { ok: true } }
+}
+
+// 尽力建立 web session(WEB_ONLY_CMDS 需要 cookie),但绝不阻塞桌面端登录:
+// Tauri release 里 /__api/* 不一定存在,阻塞 await 会让登录浮层一直关不掉(对标 invest 293a8e6)。
+function syncWebSessionBestEffort(password, timeoutMs = 1200) {
+  if (!password || typeof fetch !== 'function') return Promise.resolve()
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null
+  return fetch('/__api/auth_login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+    ...(controller ? { signal: controller.signal } : {}),
+  }).catch(() => {}).finally(() => {
+    if (timer) clearTimeout(timer)
+  })
 }
 
 const PROFILE_HOME_ROUTE = getProfileHomeRoute()
@@ -361,9 +378,9 @@ function showLoginOverlay(defaultPw) {
       }
       try {
         if (isTauri) {
-          // 桌面端：本地比对密码
+          // 桌面端：本地比对密码。加 2.5s 超时避免 IPC 卡死时登录按钮永久转圈(invest 293a8e6)
           const { api } = await import('./lib/tauri-api.js')
-          const cfg = await api.readPanelConfig()
+          const cfg = await withTimeout(api.readPanelConfig(), 2500, '读取本地配置超时，请重启 Privix 后重试')
           if (pw !== cfg.accessPassword) {
             _loginFailCount++
             if (_loginFailCount >= CAPTCHA_THRESHOLD && !_captcha) {
@@ -377,14 +394,9 @@ function showLoginOverlay(defaultPw) {
             return
           }
           sessionStorage.setItem('privix_community_authed', '1')
-          // 同步建立 web session（WEB_ONLY_CMDS 需要 cookie 认证）
-          try {
-            await fetch('/__api/auth_login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ password: pw }),
-            })
-          } catch {}
+          // 建立 web session（WEB_ONLY_CMDS 需要 cookie 认证）— 非阻塞,Tauri release 中
+          // /__api/* 不一定存在,不能让登录卡在这里(invest 293a8e6)
+          void syncWebSessionBestEffort(pw)
           overlay.classList.add('hide')
           setTimeout(() => overlay.remove(), 400)
           if (cfg.accessPassword === '123456') {
@@ -538,6 +550,12 @@ async function boot() {
     // 版本门控预加载（fire-and-forget，未获取到版本时默认显示所有功能）
     initFeatureGates().catch(() => {})
     setRouteGuard(async (routeState) => {
+      // 深链直达守卫(invest 6a2feeb):当前引擎跑不了目标路由但另一引擎能跑时,先切引擎再放行。
+      // 修复在 OpenClaw 下直达 /h/* Hermes 深链时卡在错误引擎导致页面空白。
+      const requiredEngine = getRouteRequiredEngine(getActiveEngineId(), routeState.path)
+      if (requiredEngine) {
+        await switchEngine(requiredEngine)
+      }
       if (getActiveEngineId() === ENGINE_ROUTE_IDS.HERMES) {
         if (!canRouteRunInEngine(ENGINE_ROUTE_IDS.HERMES, routeState.path)) {
           return { redirectTo: { path: getActiveEngine()?.getDefaultRoute() || '/h/dashboard' } }

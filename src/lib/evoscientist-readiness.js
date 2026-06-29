@@ -89,6 +89,15 @@ const BASE_CONFIG = Object.freeze({
   custom_anthropic_api_key: '',
   custom_anthropic_base_url: '',
   ollama_base_url: '',
+  // EvoScientist 0.1.4 新增：运行 / 记忆 / 辅助模型配置(简单默认,不作为必填)
+  default_mode: 'daemon',
+  auto_mode: false,
+  show_thinking: false,
+  enable_async_subagents: false,
+  memory_observations_enabled: true,
+  reasoning_effort: '',
+  auxiliary_provider: '',
+  auxiliary_model: '',
 })
 
 let _snapshot = null

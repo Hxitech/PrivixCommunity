@@ -2928,8 +2928,12 @@ export async function render() {
 }
 
 export function cleanup() {
-  _unlistenEvent?.()
-  _unlistenEvent = null
+  // 注意:不在这里解绑 `evoscientist-event` 监听器 —— 研究桥接(Python 进程)与引擎/路由
+  // 完全独立,会持续在后台跑并 emit 进度/完成事件。之前 cleanup 解绑它,导致用户切到其它引擎
+  // (离开 /research)后,桥接仍在跑但事件无人接收 → 进度卡死、完成事件丢失、_state.sending
+  // 永远 true,研究看起来"自动停止"。改为 app 生命周期常驻(ensureListeners 幂等,不会重复绑),
+  // handleEventPayload 持续更新 _state,各 renderXxxSection 已有 `if (!_xxxEl) return` 守卫,
+  // 卸载期间安全 no-op;返回页面时 renderAll 反映最新真实状态(仍在跑 / 已完成输出)。
   _unlistenInstallLog?.()
   _unlistenInstallLog = null
   _unlistenInstallProgress?.()

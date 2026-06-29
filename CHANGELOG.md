@@ -6,9 +6,84 @@
 
 ## [Unreleased]
 
-聚合 sync/invest-2026-05、sync/invest-2026-06、sync/invest-2026-07 三批次同步,发版时合并到下一个 -ce 版本号。
+聚合 sync/invest-2026-05 ~ sync/invest-2026-08 四批次同步,发版时合并到下一个 -ce 版本号。
 
 ---
+
+### sync/invest-2026-08 (续) — 引擎深链路由 + 桌面启动加固 + CLI 路径
+
+补齐 v1.10.14→v1.10.29 范围内遗漏的崩溃 / 卡死 / 路由类 fix(全盘点交叉比对后)。
+
+#### 修复
+
+- **OpenClaw CLI 路径绕过缓存**(同步自 invest `36e7c3e`,🔴 崩溃):`service.rs` 3 处直接 `Command::new("openclaw")` 而非 `crate::utils::openclaw_command[_async]()` → 走系统 PATH 解析而非已绑定/已缓存的 CLI 路径,**升级 OpenClaw 后版本切换失效**(仍调旧 CLI)。gateway 启动 / `is_cli_installed` / health 探测三处统一改用缓存路径
+- **引擎深链路由加载**(同步自 invest `6a2feeb`,🟠 路由卡死):在 OpenClaw 引擎下直达 `/h/*` Hermes 深链时,路由守卫不切引擎 → 卡在错误引擎下页面空白。`engine-route-policy.js` 新增 `isHermesEngineRoute()` + `canRouteRunInEngine`/`getRouteRequiredEngine` 补 OpenClaw→Hermes 切换语义;`main.js` 路由守卫开头 `getRouteRequiredEngine` + `switchEngine` 先切引擎再放行;`product-profile.js` Hermes allowed-routes 补 `/h/logs` `/h/memory`(已注册但漏在白名单)
+- **桌面端启动卡死防护**(同步自 invest `293a8e6`,🔴 卡死):`checkAuth` / 登录浮层的 `api.readPanelConfig()` 加 2.5s `withTimeout`(复用 router.js 既有)→ IPC 卡死时不让 splash / 登录按钮永久挂起;登录建立 web session 的 `await fetch('/__api/auth_login')` 改为非阻塞 `syncWebSessionBestEffort()`(1.2s AbortController 超时)—— Tauri release 中 `/__api/*` 不一定存在,阻塞 await 会让登录浮层关不掉
+
+#### N/A / 跳过
+
+- `e0edd60` memory.js 搜索防抖泄漏:CE 的 `src/pages/memory.js` 无 v1.10.16 全文搜索功能(Power User 新功能未同步),防抖泄漏不存在
+- `293a8e6` 的 `renderFatalStartupError` / `onDomReady` / `bindShellElements`:CE 在 sync-06 已有 boot `.catch` 内联错误 UI 兜底,不重复
+- `293a8e6` 的 hermes.rs minimax chat 部分:Hermes provider 系统改动,CE 无前置
+
+#### Windows CLI 检测(同步自 invest `e748b72` + `d2cf86e`,🔴 Windows 版本切换失效)
+
+- **新安装器 .exe / .js 入口检测**:OpenClaw 新安装器在 Windows 出 `openclaw.exe` / node_modules 出 `bin/openclaw.js`(需 `node` 调用),CE 旧 `find_openclaw_cmd` 只查 `openclaw.cmd` → **装了新版但面板找不到 CLI / 版本切换失效**。`utils.rs` 新增 `windows_openclaw_entry_relpaths()`(5 种入口)+ `common_windows_cli_candidates()`(枚举 enhanced PATH + `%APPDATA%\npm` + npm prefix + standalone + `%LOCALAPPDATA%`)+ `apply_windows_openclaw_invocation()`(.js 走 `node`,其它 `cmd /c`)
+- **CLI 路径解析 60s TTL 缓存**:`find_openclaw_cmd` 在 15s 网关轮询 + 每次 `openclaw_command*` 调用链上跑,每次 spawn `npm config get prefix` + 数十次 stat → Windows 稳态性能回归。加 `RESOLVED_CLI_CACHE`(60s TTL,对齐 `ENHANCED_PATH_CACHE`)+ `invalidate_openclaw_cli_cache()`(`refresh_enhanced_path` 时主动失效)
+- **agent_detect 移除多余 CommandExt import**:tokio Command 自带 inherent `creation_flags`,导入 trait 触发 unused import 警告(Windows clippy -D warnings 会失败)
+- 双目标验证:macOS `cargo check` + `cargo check --target x86_64-pc-windows-gnu` 均 0 error(实编译 cfg(windows) 全部新代码)
+- **跳过**:`d2cf86e` 的 `scan_all_installations` 多安装扫描增强(多安装管理 UI 是新功能)/ models.js per-model(CE 无 normalizeDefaultModelMap)
+
+#### 性能 / 内存(同步自 invest `8b57448` fix 部分,跳过外部客户端导入 / Plugin Hub 分类等新功能)
+
+- **chat 消息队列上限 50**(🟠 内存):`_messageQueue.push` 无上限 → streaming 卡死时用户连发会让队列(含 attachments base64)无限增长占内存。加 50 条上限 + `queue_full` toast(11 locale)
+- **chat 图片 lazy load + async decoding**(perf):消息列表图片加 `loading='lazy'` + `decoding='async'`,长会话(多图)滚动更流畅,减少首次渲染卡顿
+- **channels 数据加载并发 + 超时**(🟠 卡死):`listConfiguredPlatforms` + `listAllBindings` 从顺序 await 改 `Promise.allSettled` 并发 + 各 8s `withTimeout`,任一慢/失败不再拖全局
+
+#### 验证
+
+cargo check ✓ 0 新 warning / npm test 122/122(engine-route-policy 测试同步更新 OpenClaw→Hermes 新语义)/ i18n:check:strict 11/11
+
+---
+
+### sync/invest-2026-08 — Hermes 0.16 + OpenClaw 内核兼容 + 灯箱内存泄漏
+
+从 invest v1.10.14 → v1.10.29(33 commit)摘取版本升级链 + 内核兼容 fix + 内存泄漏修复。聚焦"已有功能 fix + 兼容 + 安全",跳过新功能(Power User 套餐、外部客户端导入、Hermes 新页面、视觉)。
+
+#### ⚠ 内核兼容(P0,必做)
+
+- **hello payload 版本字段兼容**(同步自 invest `e748b72` / 上游 a50000a):OpenClaw 2026.5.18/5.19+ 把版本从扁平 `hello.serverVersion` 迁到嵌套 `hello.server.version`(协议仍 v4)。`ws-client.js` 改为双读 `payload?.serverVersion || payload?.server?.version`,否则连最新内核握手成功后 serverVersion 为空 → Dashboard 版本显示 / negotiatedProtocol 推断全断
+- **Windows npm prefix 潜伏 bug 修复**(同 `e748b72`):`windows_npm_global_prefix()` 被 `skills.rs` 引用但全树从未定义(只在 `#[cfg(windows)]` 编译,macOS check 跳过未暴露)→ 在 `mod.rs` 补齐定义(`npm config get prefix` + `%APPDATA%\npm` 回退)。修复潜伏的 Windows 编译失败
+- **feature gates 留位**:`FEATURE_HELLO_NESTED_SERVER`(2026.5.18)/ `FEATURE_SKILL_WORKSHOP` / `FEATURE_WORKBOARD`(2026.6.1)
+
+#### 变更
+
+- **Hermes Agent 升级到 0.16.0**(URL pin → `v2026.6.5`,The Surface Release)。0.13→0.16 升级链:0.14 新增 LINE/SimpleX 平台 + 补齐消息发送依赖(httpx/openai/aiohttp/websockets);0.15.1 新增 ntfy 平台、Discord/Mattermost 迁为 plugin;0.16 无 env var 重命名 / 无平台增删,requires-python 收紧为 `>=3.11,<3.14`。**无破坏性 env var 变更**(2026-06-07 兼容审计 LOW RISK)
+  - 新增 `HERMES_TOOL_WITH_DEPS` 数组 + `add_hermes_tool_with_deps()` helper:`--with` 注入 croniter/httpx/openai/aiohttp/websockets,避免宿主缺包导致 Hermes 消息发送失败。统一应用到 install + reinstall 两条路径
+
+#### 修复
+
+- **聊天灯箱内存泄漏**(同步自 invest `e0edd60` 摘取):`showLightbox` 点击关闭路径只 `lb.remove()` 不解绑 document keydown listener → 每次开灯箱泄漏一个 listener。改为统一 `close()` 解绑 + 注册到模块级 `_transientOverlayClosers` Set,`cleanup()` 路由切走时兜底关闭所有残留 overlay
+- **chat-event-compat replace 空值守卫**(同 `e0edd60`):delta 协议 `replace=true` 改为无条件采用 snapshot(含空字符串 = 全清场景),snapshot 缺失时回退 incrementalText。补 3 个单测(replace 短 snapshot 覆盖 / 空 snapshot 清空 / 非 replace 前缀扩展)
+- **welcome-modal i18n 时序**(同步自 invest `ac08330` 摘取):`AI_SPOTLIGHT_STEPS` 模块级 const 在 import 时就冻结 `t()` 结果,若 i18n 未加载完则文案错误/缺失。改为 `getAiSpotlightSteps()` 函数延迟求值
+
+#### 同步追踪
+
+- 已 port:`e748b72`(hello 兼容 + windows latent bug,摘取)、Hermes 0.13→0.16 版本链(`fd6948b`/`b6a297b`/`6cbbbaa`)、`e0edd60`(灯箱泄漏 + replace 守卫,摘取)、`ac08330`(welcome-modal i18n,摘取)
+- 跳过:OpenClaw 推荐版本号强升 5.12→6.1(CE baseline 2026.4.12 自决)/ `e748b72` Windows CLI .exe/.js 检测 132 行(留下批,与 `d2cf86e` CLI 缓存一起)/ `d2cf86e` CLI 60s TTL 缓存(耦合 Windows 检测)+ models.js per-model fix(依赖 CE 未 port 的 models.js 完整主模型自愈)/ Hermes pages 改动(自主演化)/ `ac08330` env.js + 商业页面(CE 无)
+- 跳过批次:`29aba1b`(v1.10.16 Power User 新功能)/ `8b57448`(外部客户端导入新功能)/ `f3f0426`/`293a8e6`/`6a2feeb`/`7fb89e7`(Hermes 引擎独占)
+
+#### EvoScientist / ProspectResearch(`fd6948b` + `3017fdc` 摘取)
+
+- **DOCX 段落导出崩溃修复**(同步自 invest `fd6948b`):`doc-export.js` markdownToDocx 的 `paragraph` 分支漏传 `parseInlineFormatting` 首参 TextRun 构造器 → 含段落的报告 `new <string>()` 抛 TypeError,任何含正文段落的报告 DOCX 导出直接失败。`doc-export.js` 是 ProspectResearch / 多功能共享导出器,**这是真实高价值 bug 修复**
+- **研究事件监听器生命周期修复**(同 `fd6948b`):`evoscientist.js` cleanup() 解绑 `evoscientist-event` 监听器 → 用户切走 `/research` 后研究桥接仍在跑但事件无人接收 → 进度卡死 / sending 永真。改为 app 生命周期常驻(ensureListeners 已幂等,renderXxxSection 有 null 守卫,卸载期间安全 no-op)
+- **BASE_CONFIG 8 新字段**(同 `3017fdc`,forward-compat):`evoscientist-readiness.js` 补 EvoScientist 0.1.4 的 default_mode / auto_mode / show_thinking / enable_async_subagents / memory_observations_enabled / reasoning_effort / auxiliary_provider / auxiliary_model
+- **N/A 跳过**:EvoScientist 0.1.4 内核 pin(`evoscientist.rs`)/ bridge.py snapshot round-trip — **CE 开源版未包含 EvoScientist 的 Rust + Python 后端**(初次 fork 时剥离),`/research` 前端在但后端不发布,故内核版本 pin 与桥接改动对 CE N/A。plan mode + workspace 一等公民 UI(147 行 + 83 CSS)在无后端时不功能,暂跳
+
+#### 下批候选
+
+- `e748b72` + `d2cf86e` Windows CLI .exe/.js 检测 + 60s TTL 缓存(完整 port,~200 行 Rust)
+- `8b57448` 部分:Channels/Plugin Hub 并发 + 超时(Promise.allSettled + withTimeout)
 
 ### sync/invest-2026-07 (续) — Module B/C: Workspace 权限自检 + 沙箱可视化
 

@@ -16,8 +16,9 @@ use std::path::{Path, PathBuf};
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
 
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
+// 注:tokio::process::Command 在 Windows 上自带 inherent 的 creation_flags 方法,
+// 不需要 std::os::windows::process::CommandExt trait(导入它会触发 unused import 警告,
+// Windows CI 的 clippy -D warnings 下会失败)。
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 

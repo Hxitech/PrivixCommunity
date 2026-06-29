@@ -101,6 +101,9 @@ let _textareaComposition = createCompositionState(), _textareaCompositionCleanup
 let _onDocumentVisibilityChange = null, _onWindowFocus = null
 let _seenRunIds = new Set()
 let _pageActive = false
+// 灯箱等临时 overlay 的关闭函数(对标 upstream v1.10.17)。路由切走时 cleanup() 统一关闭,
+// 避免 overlay 残留在 document.body + 其 document 级 keydown listener 永久泄漏。
+const _transientOverlayClosers = new Set()
 let _errorTimer = null, _lastErrorMsg = null
 let _responseWatchdog = null, _postFinalCheck = null
 let _ultimateTimer = null, _sendTimestamp = 0
@@ -1143,7 +1146,15 @@ async function sendMessage() {
   _attachments = []
   renderAttachments()
   syncFastModePreferenceFromCommand(text)
-  if (_isSending || _isStreaming || _isBootstrappingCommand) { _messageQueue.push({ text, attachments }); return }
+  if (_isSending || _isStreaming || _isBootstrappingCommand) {
+    // 队列上限 50 条,避免 streaming 卡死时用户疯狂连发导致队列无限增长占内存(含 attachments base64)
+    if (_messageQueue.length >= 50) {
+      toast(t('pages.chat.queue_full'), 'warn')
+      return
+    }
+    _messageQueue.push({ text, attachments })
+    return
+  }
   doSend(text, attachments)
 }
 
@@ -2096,6 +2107,10 @@ function appendImagesToEl(el, images) {
       return
     }
     imgEl.className = 'msg-img'
+    // perf:lazy load + async decoding,大长对话(多图)滚动列表更流畅,
+    // 浏览器只在图片即将进入视口时解码 bitmap,大幅减少长会话首次渲染卡顿
+    imgEl.loading = 'lazy'
+    imgEl.decoding = 'async'
     imgEl.onclick = () => showLightbox(imgEl.src)
     container.appendChild(imgEl)
   })
@@ -2166,10 +2181,18 @@ function showLightbox(src) {
   const lb = document.createElement('div')
   lb.className = 'chat-lightbox'
   lb.innerHTML = `<img src="${src}" class="chat-lightbox-img" />`
-  lb.onclick = (e) => { if (e.target === lb || e.target.tagName !== 'IMG') lb.remove() }
   document.body.appendChild(lb)
-  // ESC 关闭
-  const onKey = (e) => { if (e.key === 'Escape') { lb.remove(); document.removeEventListener('keydown', onKey) } }
+  // 内存泄漏修(对标 upstream v1.10.15/17):点击关闭 / 路由切换 / ESC 三条路径都要解绑 keydown,
+  // 之前点击关闭路径只 lb.remove() 不解绑 → keydown listener 永久残留(每次开灯箱泄一个)。
+  // 再把 close 注册到 _transientOverlayClosers,cleanup() 时兜底关闭(路由切走场景)。
+  const onKey = (e) => { if (e.key === 'Escape') close() }
+  const close = () => {
+    lb.remove()
+    document.removeEventListener('keydown', onKey)
+    _transientOverlayClosers.delete(close)
+  }
+  _transientOverlayClosers.add(close)
+  lb.onclick = (e) => { if (e.target === lb || e.target.tagName !== 'IMG') close() }
   document.addEventListener('keydown', onKey)
 }
 
@@ -2289,6 +2312,11 @@ function updateStatusDot(status) {
 
 export function cleanup() {
   _pageActive = false
+  // 关闭所有残留的临时 overlay(灯箱),解绑其 document 级 keydown listener
+  for (const closeFn of [..._transientOverlayClosers]) {
+    try { closeFn() } catch {}
+  }
+  _transientOverlayClosers.clear()
   if (_unsubEvent) { _unsubEvent(); _unsubEvent = null }
   if (_unsubReady) { _unsubReady(); _unsubReady = null }
   if (_unsubStatus) { _unsubStatus(); _unsubStatus = null }

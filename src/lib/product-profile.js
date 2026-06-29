@@ -45,6 +45,8 @@ const MODULE_ROUTES = {
     '/h/setup',
     '/h/dashboard',
     '/h/chat',
+    '/h/logs',
+    '/h/memory',
     '/h/services',
     '/h/config',
     '/h/channels',

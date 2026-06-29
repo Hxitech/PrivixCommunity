@@ -1152,14 +1152,30 @@ fn extract_uv_tar_gz(data: &[u8], dest: &std::path::Path) -> Result<(), String> 
     Err("tar.gz 中未找到 uv".into())
 }
 
-/// Hermes Agent 的 GitHub 安装源。v0.13.0 对应 release tag v2026.5.7(Tenacity Release)。
-/// 升级要点:8 个 P0 安全漏洞修复 + 默认开启 redaction + multi-agent Kanban + /goal 命令。
-/// 0.13 起 croniter 已是核心依赖(pyproject.toml dependencies),--with croniter 退化为
-/// no-op 兜底,保留以防上游再次拆分。Platform registry 与 0.12 builtin 21 个完全一致,
-/// 仅 yuanbao emoji 与若干 platform 的 env var 名称重命名 — panel 这一侧透明,
-/// 由用户在 ~/.hermes/config.yaml 中按新名称配置即可。
-const HERMES_TARGET_VERSION: &str = "0.13.0";
-const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git@v2026.5.7";
+/// Hermes Agent 的 GitHub 安装源。v0.16.0 对应 release tag v2026.6.5(The Surface Release)。
+/// 0.13→0.16 升级链(对 panel 的窄接口面,2026-06-07 兼容审计结论:LOW RISK):
+///   - 0.13→0.14(v2026.5.16):新增 LINE + SimpleX 平台,补齐消息发送依赖
+///     (httpx/openai/aiohttp/websockets);
+///   - 0.14→0.15.1(v2026.5.29):新增 ntfy 平台(env NTFY_TOPIC),Discord/Mattermost
+///     从 builtin 迁为 plugin(env var 透明);
+///   - 0.15→0.16(v2026.6.5):**无 env var 重命名 / 无平台增删**(逐项核对 builtin Platform
+///     enum + plugin.yaml + adapter os.getenv,与 v2026.5.29 一致);安装机制不变,但
+///     requires-python 收紧为 `>=3.11,<3.14`(仅当宿主解析到 Python 3.14 时报错,3.11~3.13 不受影响);
+///     /v1/responses→/v1/runs + /health + /v1/capabilities 端点全部不变。
+///
+/// panel 只读 hermes_list_channels 元数据 + 走 /v1/responses→/v1/runs(带 fallback),0.16 均兼容。
+/// platform env var 仍由用户在 ~/.hermes/config.yaml 按新名称配置(panel 透明转发)。
+const HERMES_TARGET_VERSION: &str = "0.16.0";
+const HERMES_GIT_URL: &str = "git+https://github.com/NousResearch/hermes-agent.git@v2026.6.5";
+/// 0.14 起 Hermes 消息发送链路依赖这些包(httpx/openai/aiohttp/websockets);croniter 自 0.13
+/// 已是核心依赖,保留以防上游再次拆为 extras。统一用 --with 注入,避免宿主缺包导致发送失败。
+const HERMES_TOOL_WITH_DEPS: [&str; 5] = ["croniter", "httpx", "openai", "aiohttp", "websockets"];
+
+fn add_hermes_tool_with_deps(cmd: &mut tokio::process::Command) {
+    for dep in HERMES_TOOL_WITH_DEPS {
+        cmd.args(["--with", dep]);
+    }
+}
 
 /// 把安装/升级日志中的 GitHub 仓库路径与版本 tag 替换成简洁的 "hermes-agent",
 /// 避免向用户暴露上游底层细节。所有 hermes-install-log emit 与错误返回均过此层。
@@ -1205,7 +1221,8 @@ async fn install_via_uv_tool(
     };
 
     let mut cmd = tokio::process::Command::new(uv_path);
-    cmd.args(["tool", "install", "--force", &pkg, "--python", "3.11", "--with", "croniter"]);
+    cmd.args(["tool", "install", "--force", &pkg, "--python", "3.11"]);
+    add_hermes_tool_with_deps(&mut cmd);
 
     // 配置 PyPI 镜像（extras 的依赖仍从 PyPI 下载）
     if let Some(mirror) = pypi_mirror_url() {
@@ -2426,6 +2443,7 @@ pub async fn update_hermes(app: tauri::AppHandle) -> Result<String, String> {
     let pkg = format!("hermes-agent @ {}", HERMES_GIT_URL);
     let mut cmd = tokio::process::Command::new(&uv);
     cmd.args(["tool", "install", "--reinstall", &pkg, "--python", "3.11"]);
+    add_hermes_tool_with_deps(&mut cmd);
     cmd.env("GIT_TERMINAL_PROMPT", "0");
     if let Some(mirror) = pypi_mirror_url() {
         cmd.args(["--index-url", &mirror]);
